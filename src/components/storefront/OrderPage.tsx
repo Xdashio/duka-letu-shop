@@ -61,7 +61,7 @@ export function OrderDetailView({ order: o, settings, showConfirmHero }: { order
           <div className="flex items-center gap-3 rounded-md bg-canvas px-4 py-3 sm:shrink-0">
             <div>
               <span className="block text-caption text-text-3">Order number</span>
-              <span className="num text-[1.375rem] font-semibold tracking-tight">{o.number}</span>
+              <span data-order-number className="num text-[1.375rem] font-semibold tracking-tight">{o.number}</span>
             </div>
             <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard?.writeText(o.number).then(() => toast({ kind: "success", title: "Order number copied" }), () => {}); }}>
               <Copy className="h-3.5 w-3.5" aria-hidden /> Copy

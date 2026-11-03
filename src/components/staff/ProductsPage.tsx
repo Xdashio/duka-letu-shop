@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { Boxes, Plus, Search, Pencil, Trash2, Eye, EyeOff, ImagePlus, X, Star, Info, ExternalLink, LoaderCircle } from "lucide-react";
+import { Boxes, Plus, Search, Pencil, Trash2, ImagePlus, X, Star, Info, ExternalLink, LoaderCircle } from "lucide-react";
 import type { Product } from "@/types";
 import { useStaff } from "@/hooks/useApp";
 import { deleteProduct, saveProduct, setPublished, type ProductInput, type VariantInput } from "@/lib/actions";
@@ -13,7 +13,7 @@ import { storeImage } from "@/lib/images";
 import { useToast } from "../shared/toast";
 import { ProductImage } from "../shared/ProductImage";
 import { LevelBadge } from "../shared/bits";
-import { Badge, Button, Checkbox, ConfirmDialog, Dialog, EmptyState, Field, Input, Select, Skeleton, Textarea, cx } from "../shared/ui";
+import { Badge, Button, Checkbox, ConfirmDialog, Dialog, EmptyState, Field, Input, Notice, Select, Skeleton, Switch, Textarea, buttonClass, cx } from "../shared/ui";
 import { PageHeader } from "./StaffShell";
 
 type StatusFilter = "" | "live" | "hidden";
@@ -87,7 +87,7 @@ function ProductForm({ initial, onClose }: { initial: Draft; onClose: () => void
 
   return (
     <Dialog open onClose={onClose} size="lg" title={isNew ? "Add product" : "Edit product"} description={isNew ? undefined : d.name}
-      footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" form="pform" disabled={uploading > 0}>{isNew ? "Add product" : "Save changes"}</Button></>}>
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="pform" disabled={uploading > 0}>{isNew ? "Add product" : "Save changes"}</Button></>}>
       <form id="pform" onSubmit={submit} noValidate className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Product name" htmlFor="p-name" error={errors.name} className="sm:col-span-2">
@@ -108,20 +108,20 @@ function ProductForm({ initial, onClose }: { initial: Draft; onClose: () => void
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-[13px] font-semibold">Photos <span className="font-normal text-text-3">· first photo is the main one · resized automatically</span></legend>
+          <legend className="mb-2 text-sm font-semibold">Photos <span className="font-normal text-text-3">· first photo is the main one · resized automatically</span></legend>
           <div className="flex flex-wrap gap-2">
             {d.images.map((src, i) => (
               <div key={src + i} className="group relative">
-                <ProductImage src={src} alt={`Photo ${i + 1}`} className={cx("h-24 w-24 rounded-sm border", i === 0 ? "border-brand-600" : "border-line")} />
-                {i === 0 ? <span className="absolute bottom-1 left-1 rounded-xs bg-brand-600 px-1 text-[10px] font-bold text-white">MAIN</span>
-                  : <button type="button" onClick={() => set("images", [src, ...d.images.filter((_, k) => k !== i)])} className="absolute bottom-1 left-1 rounded-xs bg-surface/90 px-1 text-[10px] font-bold hover:bg-surface" aria-label={`Make photo ${i + 1} the main photo`}>Make main</button>}
+                <ProductImage src={src} alt={`Photo ${i + 1}`} className={cx("h-24 w-24 rounded-sm", i === 0 ? "ring-2 ring-ink-900" : "ring-1 ring-line")} />
+                {i === 0 ? <span className="absolute bottom-1 left-1 rounded-xs bg-ink-900 px-1.5 text-[0.6875rem] font-semibold text-white">Main</span>
+                  : <button type="button" onClick={() => set("images", [src, ...d.images.filter((_, k) => k !== i)])} className="absolute bottom-1 left-1 rounded-xs bg-surface/90 px-1.5 text-[0.6875rem] font-semibold hover:bg-surface" aria-label={`Make photo ${i + 1} the main photo`}>Make main</button>}
                 <button type="button" onClick={() => set("images", d.images.filter((_, k) => k !== i))} aria-label={`Remove photo ${i + 1}`}
                   className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink-900/80 text-white hover:bg-ink-900"><X className="h-3.5 w-3.5" /></button>
               </div>
             ))}
             {Array.from({ length: uploading }, (_, i) => <div key={`u${i}`} className="flex h-24 w-24 items-center justify-center rounded-sm border border-dashed border-line-strong"><LoaderCircle className="h-5 w-5 animate-spin text-text-3" aria-label="Processing photo" /></div>)}
             {d.images.length + uploading < 6 && (
-              <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-line-strong text-[12px] font-semibold text-text-2 hover:border-brand-600 hover:text-brand-700 focus-within:ring-2 focus-within:ring-brand-500">
+              <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-line-strong text-caption font-semibold text-text-2 hover:border-text-3 hover:text-text focus-within:ring-2 focus-within:ring-brand-500">
                 <ImagePlus className="h-5 w-5" aria-hidden /> Add photo
                 <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => onFiles(e.target.files)} />
               </label>
@@ -130,13 +130,13 @@ function ProductForm({ initial, onClose }: { initial: Draft; onClose: () => void
         </fieldset>
 
         <fieldset>
-          <legend className="mb-2 text-[13px] font-semibold">Variants <span className="font-normal text-text-3">· wattage, colour, size… each with its own {showPrices ? "price and " : ""}stock</span></legend>
+          <legend className="mb-2 text-sm font-semibold">Variants <span className="font-normal text-text-3">· wattage, colour, size… each with its own {showPrices ? "price and " : ""}stock</span></legend>
           {!showPrices && (
-            <p className="mb-3 flex items-start gap-2 rounded-sm bg-info-100 px-3 py-2 text-[13px] text-info-600"><Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> Prices are set by the owner. New variants stay hidden from customers until priced.</p>
+            <Notice tone="info" icon={<Info />} className="mb-3">Prices are set by the owner. New variants stay hidden from customers until priced.</Notice>
           )}
           <div className="space-y-2">
             {d.variants.map((v, i) => (
-              <div key={v.id ?? `new${i}`} className="grid grid-cols-2 items-start gap-2 rounded-sm border border-line bg-canvas/60 p-2.5 sm:grid-cols-[1.4fr_1fr_0.9fr_0.8fr_auto]">
+              <div key={v.id ?? `new${i}`} className="grid grid-cols-2 items-start gap-x-2 gap-y-3 rounded-sm bg-canvas p-3 sm:grid-cols-[1.4fr_1fr_0.9fr_0.8fr_auto]">
                 <Field label="Label" htmlFor={`v${i}l`} error={errors[`v${i}label`]} className="col-span-2 sm:col-span-1">
                   <Input id={`v${i}l`} value={v.label} onChange={(e) => setV(i, { label: e.target.value })} placeholder="e.g. 9W or Red" invalid={!!errors[`v${i}label`]} className="h-9" />
                 </Field>
@@ -149,8 +149,8 @@ function ProductForm({ initial, onClose }: { initial: Draft; onClose: () => void
                   </Field>
                 ) : <div className="hidden sm:block" />}
                 {v.id ? (
-                  <div className="flex flex-col gap-1.5"><span className="text-[13px] font-semibold">Stock</span>
-                    <span className="num flex h-9 items-center text-sm" title="Change stock in Inventory">{v.stock} <Link href="/staff/inventory" className="ml-1.5 text-[12px] font-semibold text-brand-600 hover:underline">adjust</Link></span></div>
+                  <div className="flex flex-col gap-1.5"><span className="text-small font-semibold">Stock</span>
+                    <span className="num flex h-9 items-center text-sm" title="Change stock in Inventory">{v.stock} <Link href="/staff/inventory" className="ml-1.5 text-caption font-semibold text-brand-600 hover:underline">Adjust</Link></span></div>
                 ) : (
                   <Field label="Opening stock" htmlFor={`v${i}o`} error={errors[`v${i}stock`]}>
                     <Input id={`v${i}o`} inputMode="numeric" value={v.openingStock} onChange={(e) => setV(i, { openingStock: e.target.value.replace(/\D/g, "") })} className="num h-9" />
@@ -163,7 +163,7 @@ function ProductForm({ initial, onClose }: { initial: Draft; onClose: () => void
               </div>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => setD((x) => ({ ...x, variants: [...x.variants, { label: "", sku: "", price: "", openingStock: "0" }] }))}>
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setD((x) => ({ ...x, variants: [...x.variants, { label: "", sku: "", price: "", openingStock: "0" }] }))}>
             <Plus className="h-4 w-4" aria-hidden /> Add variant
           </Button>
         </fieldset>
@@ -207,16 +207,15 @@ export function ProductsPage() {
       <PageHeader title="Products" sub={`${snap.data.products.length} products · ${snap.data.products.filter((p) => p.published).length} live on the storefront`}
         actions={<Button onClick={() => setEditing(emptyDraft(cat || snap.data.categories[0].id))}><Plus className="h-4 w-4" aria-hidden /> Add product</Button>} />
 
-      <p className="mb-4 flex items-start gap-2 rounded-sm border border-marigold-200 bg-marigold-100/60 px-3 py-2 text-[13px] text-[#6b4a07]">
-        <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-        <span>Demonstration catalogue built from the shop’s status photos. {showPrices ? "Prices and stock" : "Stock levels"} are sample values. {unconfirmed} product names were read from photos and are marked <b>To confirm</b>.</span>
-      </p>
+      <Notice tone="demo" icon={<Info />} className="mb-5">
+        Demonstration catalogue built from the shop’s status photos. {showPrices ? "Prices and stock" : "Stock levels"} are sample values. {unconfirmed} names were read from photos and are marked <b>To confirm</b>.
+      </Notice>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_180px_150px_170px]">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_150px_180px]">
         <div className="relative">
           <label htmlFor="pr-q" className="sr-only">Search products</label>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" aria-hidden />
-          <Input id="pr-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, brand or SKU" className="pl-9" />
+          <Input id="pr-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, brand or SKU…" className="pl-9" spellCheck={false} />
         </div>
         <div><label htmlFor="pr-cat" className="sr-only">Category</label>
           <Select id="pr-cat" value={cat} onChange={(e) => setCat(e.target.value)}><option value="">All categories</option>{snap.data.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></div>
@@ -228,40 +227,84 @@ export function ProductsPage() {
 
       <div className="overflow-hidden rounded-md border border-line bg-surface">
         {list.length === 0 ? <EmptyState icon={<Boxes />} title="No products found" body="Try a different search or filter." /> : (
-          <ul className="divide-y divide-line">
+          <>
+          {/* Desktop / tablet table */}
+          <table className="hidden w-full text-sm md:table">
+            <caption className="sr-only">Products</caption>
+            <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
+              <tr>
+                <th className="px-4 py-2.5 font-semibold">Product</th>
+                <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Category</th>
+                {showPrices && <th className="px-4 py-2.5 text-right font-semibold">Price</th>}
+                <th className="px-4 py-2.5 font-semibold">Stock</th>
+                <th className="px-4 py-2.5 font-semibold">On storefront</th>
+                <th className="px-4 py-2.5"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {list.map((p) => {
+                const prices = p.variants.map((v) => v.price).filter((x) => x > 0);
+                return (
+                  <tr key={p.id} className="group hover:bg-canvas/60">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <ProductImage src={p.images[0]} alt="" className="h-11 w-11 shrink-0 rounded-sm" />
+                        <div className="min-w-0">
+                          <p className="flex flex-wrap items-center gap-1.5">
+                            <button onClick={() => setEditing(toDraft(p))} className="max-w-[320px] truncate text-left font-medium hover:underline">{p.name}</button>
+                            {p.nameUnconfirmed && <Badge tone="accent">To confirm</Badge>}
+                            {p.featured && <Star className="h-3.5 w-3.5 fill-marigold-500 text-marigold-600" aria-label="Featured" />}
+                          </p>
+                          <p className="num text-caption text-text-3">{p.sku} · {p.brand} · {p.variants.length} {p.variants.length === 1 ? "variant" : "variants"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden px-4 py-2.5 text-text-2 lg:table-cell">{cats.get(p.categoryId)}</td>
+                    {showPrices && (
+                      <td className="num whitespace-nowrap px-4 py-2.5 text-right font-medium">
+                        {prices.length === 0 ? <Badge tone="warning">Needs price</Badge> : Math.min(...prices) === Math.max(...prices) ? money(prices[0]) : `${money(Math.min(...prices))}+`}
+                      </td>
+                    )}
+                    <td className="px-4 py-2.5"><LevelBadge level={productStockLevel(p, th)} /><span className="num ml-2 text-caption text-text-3">{totalStock(p)}</span></td>
+                    <td className="px-4 py-2.5">
+                      <Switch checked={p.published} label={`${p.name} on storefront`} onChange={() => attempt(() => setPublished(p.id, !p.published), (r) => r.published ? `${r.name} is live` : `${r.name} hidden`)} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(toDraft(p))} aria-label={`Edit ${p.name}`}><Pencil className="h-3.5 w-3.5" aria-hidden /> Edit</Button>
+                        {p.published && <Link href={`/product/${p.slug}`} target="_blank" className={buttonClass("ghost", "icon-sm")} aria-label={`View ${p.name} on storefront`} title="View on storefront"><ExternalLink className="h-4 w-4" /></Link>}
+                        {canDelete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${p.name}`} title="Delete" onClick={() => setDel(p)} className="hover:!text-danger-600"><Trash2 className="h-4 w-4" /></Button>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Phone list */}
+          <ul className="divide-y divide-line md:hidden">
             {list.map((p) => {
               const prices = p.variants.map((v) => v.price).filter((x) => x > 0);
               return (
-                <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
+                <li key={p.id} className="flex items-center gap-3 px-4 py-3">
                   <ProductImage src={p.images[0]} alt="" className="h-14 w-14 shrink-0 rounded-sm" />
-                  <div className="min-w-0 flex-1 basis-48">
-                    <p className="flex flex-wrap items-center gap-1.5">
-                      <button onClick={() => setEditing(toDraft(p))} className="truncate text-left text-sm font-semibold hover:text-brand-700 hover:underline">{p.name}</button>
-                      {p.nameUnconfirmed && <Badge tone="accent">To confirm</Badge>}
-                      {p.featured && <Star className="h-3.5 w-3.5 fill-marigold-500 text-marigold-500" aria-label="Featured" />}
+                  <div className="min-w-0 flex-1">
+                    <button onClick={() => setEditing(toDraft(p))} className="line-clamp-2 text-left text-sm font-medium">{p.name}</button>
+                    <p className="num mt-0.5 text-caption text-text-3">
+                      {showPrices && <>{prices.length ? money(Math.min(...prices)) : "Needs price"} · </>}{totalStock(p)} in stock
                     </p>
-                    <p className="num text-[12px] text-text-3">{p.sku} · {cats.get(p.categoryId)} · {p.brand} · {p.variants.length} {p.variants.length === 1 ? "variant" : "variants"}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <LevelBadge level={productStockLevel(p, th)} />
+                      {p.nameUnconfirmed && <Badge tone="accent">To confirm</Badge>}
+                    </div>
                   </div>
-                  {showPrices && (
-                    <span className="num hidden w-32 text-right text-sm font-semibold md:block">
-                      {prices.length === 0 ? <Badge tone="warning">Needs price</Badge> : Math.min(...prices) === Math.max(...prices) ? money(prices[0]) : `${money(Math.min(...prices))}+`}
-                    </span>
-                  )}
-                  <span className="hidden w-28 lg:block"><LevelBadge level={productStockLevel(p, th)} /><span className="num block text-[12px] text-text-3">{totalStock(p)} units</span></span>
-                  <span className="w-20">{p.published ? <Badge tone="success">Live</Badge> : <Badge>Hidden</Badge>}</span>
-                  <div className="ml-auto flex items-center gap-1">
-                    <Button variant="ghost" size="icon-sm" aria-label={p.published ? `Hide ${p.name}` : `Publish ${p.name}`} title={p.published ? "Hide from storefront" : "Publish"}
-                      onClick={() => attempt(() => setPublished(p.id, !p.published), (r) => r.published ? `${r.name} is live` : `${r.name} hidden`)}>
-                      {p.published ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" aria-label={`Edit ${p.name}`} title="Edit" onClick={() => setEditing(toDraft(p))}><Pencil className="h-4 w-4" /></Button>
-                    {p.published && <Link href={`/product/${p.slug}`} target="_blank" className="flex h-8 w-8 items-center justify-center rounded-sm text-text hover:bg-sunken" aria-label={`View ${p.name} on storefront`} title="View on storefront"><ExternalLink className="h-4 w-4" /></Link>}
-                    {canDelete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${p.name}`} title="Delete" onClick={() => setDel(p)} className="text-danger-600"><Trash2 className="h-4 w-4" /></Button>}
-                  </div>
+                  <Switch checked={p.published} label={`${p.name} on storefront`} onChange={() => attempt(() => setPublished(p.id, !p.published), (r) => r.published ? `${r.name} is live` : `${r.name} hidden`)} />
                 </li>
               );
             })}
           </ul>
+          </>
         )}
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { ClipboardList, Search, Store, Truck, Phone, Banknote, Smartphone, Ban, ArrowRight, MessageCircle } from "lucide-react";
+import { ClipboardList, Search, Store, Truck, Phone, Banknote, Smartphone, Ban, ArrowRight, MessageCircle, ChevronRight } from "lucide-react";
 import type { Order } from "@/types";
 import { useStaff } from "@/hooks/useApp";
 import { advanceOrder, cancelOrder, recordOrderPayment } from "@/lib/actions";
@@ -12,7 +12,7 @@ import { can } from "@/lib/permissions";
 import { useToast } from "../shared/toast";
 import { ProductImage } from "../shared/ProductImage";
 import { OrderTracker, PaymentBadge, StatusBadge, StatusHistory } from "../shared/OrderBits";
-import { Button, ConfirmDialog, Drawer, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea } from "../shared/ui";
+import { Button, ConfirmDialog, Drawer, EmptyState, Field, Input, Segmented, Select, Skeleton, Textarea, cx } from "../shared/ui";
 import { PageHeader } from "./StaffShell";
 
 type Tab = "new" | "active" | "done" | "cancelled" | "all";
@@ -47,20 +47,20 @@ function OrderDrawer({ order: o, onClose }: { order: Order; onClose: () => void 
               {NEXT_ACTION_LABEL[next]} <ArrowRight className="h-4 w-4" aria-hidden />
             </Button>
           )}
-          <Button size="lg" variant="outline" onClick={() => setCancelOpen(true)}><Ban className="h-4 w-4" aria-hidden /> Cancel order</Button>
-          {blockedByPayment && <p className="w-full text-[13px] text-warning-600">Record payment before marking this order {next === "collected" ? "collected" : "delivered"}.</p>}
+          <Button size="lg" variant="secondary" onClick={() => setCancelOpen(true)}><Ban className="h-4 w-4" aria-hidden /> Cancel order</Button>
+          {blockedByPayment && <p className="w-full text-small text-warning-600">Record payment before marking this order {next === "collected" ? "collected" : "delivered"}.</p>}
         </div>
       ) : undefined}>
       <div className="space-y-6 px-5 py-5">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={o.status} /><PaymentBadge status={o.paymentStatus} />
-          <span className="ml-auto text-[13px] text-text-3">Placed {fmtDateTime(o.createdAt)}</span>
+          <span className="num ml-auto text-small text-text-3">Placed {fmtDateTime(o.createdAt)}</span>
         </div>
         <OrderTracker order={o} compact />
 
         {needsPayment && manage && (
-          <section className="rounded-md border border-warning-100 bg-warning-100/50 p-4" aria-labelledby="pay-t">
-            <h3 id="pay-t" className="flex items-center gap-2 font-sans text-sm font-bold">
+          <section className="rounded-md bg-warning-100/70 p-4" aria-labelledby="pay-t">
+            <h3 id="pay-t" className="flex items-center gap-2 font-sans text-sm font-semibold tracking-normal">
               {o.paymentMethod === "cash" ? <Banknote className="h-4 w-4" aria-hidden /> : <Smartphone className="h-4 w-4" aria-hidden />}
               {o.paymentMethod === "cash" ? `Collect ${money(o.total)} cash at pickup` : `M-Pesa ${o.paymentStatus === "failed" ? "payment failed" : "not yet confirmed"}`}
             </h3>
@@ -78,16 +78,16 @@ function OrderDrawer({ order: o, onClose }: { order: Order; onClose: () => void 
         )}
 
         <section aria-labelledby="cust-t">
-          <h3 id="cust-t" className="mb-2 text-[12px] font-bold uppercase tracking-wider text-text-3">Customer</h3>
-          <div className="rounded-md border border-line p-4 text-sm">
+          <h3 id="cust-t" className="mb-2 text-caption font-semibold text-text-3">Customer</h3>
+          <div className="rounded-md bg-canvas p-4 text-sm">
             <p className="font-semibold">{o.customer.name}</p>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-text-2">
               <a href={`tel:+${o.customer.phone}`} className="num flex items-center gap-1.5 hover:text-brand-700"><Phone className="h-3.5 w-3.5" aria-hidden />{fmtPhone(o.customer.phone)}</a>
               {wa && <a href={`https://wa.me/${o.customer.phone}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:text-brand-700"><MessageCircle className="h-3.5 w-3.5" aria-hidden />WhatsApp</a>}
               {o.customer.email && <span>{o.customer.email}</span>}
             </div>
-            <p className="mt-3 flex items-start gap-2 border-t border-line pt-3">
-              {o.fulfilment === "pickup" ? <Store className="mt-0.5 h-4 w-4 text-brand-600" aria-hidden /> : <Truck className="mt-0.5 h-4 w-4 text-brand-600" aria-hidden />}
+            <p className="mt-3 flex items-start gap-2 border-t border-line-strong/50 pt-3">
+              {o.fulfilment === "pickup" ? <Store className="mt-0.5 h-4 w-4 text-text-3" aria-hidden /> : <Truck className="mt-0.5 h-4 w-4 text-text-3" aria-hidden />}
               <span>{o.fulfilment === "pickup" ? "Shop pickup" : <>Delivery · {o.zoneName} ({money(o.deliveryFee)}){o.deliveryNote && <span className="block text-text-2">“{o.deliveryNote}”</span>}</>}</span>
             </p>
             <p className="mt-2 text-text-2">{PAYMENT_LABEL[o.paymentMethod]}{o.paymentRef && o.paymentRef !== "CASH" && <span className="num"> · Ref {o.paymentRef}</span>}</p>
@@ -95,21 +95,21 @@ function OrderDrawer({ order: o, onClose }: { order: Order; onClose: () => void 
         </section>
 
         <section aria-labelledby="it-t">
-          <h3 id="it-t" className="mb-2 text-[12px] font-bold uppercase tracking-wider text-text-3">Items to pack</h3>
-          <ul className="divide-y divide-line rounded-md border border-line">
+          <h3 id="it-t" className="mb-2 text-caption font-semibold text-text-3">Items to pack</h3>
+          <ul className="divide-y divide-line border-y border-line">
             {o.items.map((i) => (
-              <li key={i.variantId} className="flex items-center gap-3 p-3 text-sm">
+              <li key={i.variantId} className="flex items-center gap-3 py-3 text-sm">
                 <ProductImage src={i.image} alt="" className="h-11 w-11 shrink-0 rounded-sm" />
-                <div className="min-w-0 flex-1"><p className="truncate font-semibold">{i.name}</p><p className="num text-[12px] text-text-3">{i.variantLabel} · {i.sku}</p></div>
-                <span className="num text-right"><b>× {i.qty}</b><span className="block text-[12px] text-text-3">{money(i.unitPrice * i.qty)}</span></span>
+                <div className="min-w-0 flex-1"><p className="truncate font-medium">{i.name}</p><p className="num text-caption text-text-3">{i.variantLabel} · {i.sku}</p></div>
+                <span className="num text-right"><b className="font-semibold">× {i.qty}</b><span className="block text-caption text-text-3">{money(i.unitPrice * i.qty)}</span></span>
               </li>
             ))}
-            <li className="flex justify-between p-3 text-sm"><span className="font-semibold">Total</span><span className="num font-display text-base font-bold">{money(o.total)}</span></li>
+            <li className="flex justify-between py-3 text-sm"><span className="font-semibold">Total</span><span className="num text-body font-semibold">{money(o.total)}</span></li>
           </ul>
         </section>
 
         <section aria-labelledby="h-t">
-          <h3 id="h-t" className="mb-3 text-[12px] font-bold uppercase tracking-wider text-text-3">History</h3>
+          <h3 id="h-t" className="mb-3 text-caption font-semibold text-text-3">History</h3>
           <StatusHistory order={o} />
         </section>
       </div>
@@ -153,7 +153,7 @@ function OrdersInner() {
 
   return (
     <div>
-      <PageHeader title="Orders" sub="Online orders from the website. Work them from New to Collected or Delivered." />
+      <PageHeader title="Orders" sub="Website orders. Work each one from New to Collected or Delivered." />
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
         <Segmented label="Order status" value={tab} onChange={setTab} options={[
           { value: "new", label: "New", count: counts.new }, { value: "active", label: "In progress", count: counts.active },
@@ -179,24 +179,25 @@ function OrdersInner() {
           <>
             {/* Desktop table */}
             <table className="hidden w-full text-sm md:table">
-              <thead className="border-b border-line bg-canvas text-left text-[12px] uppercase tracking-wider text-text-3">
+              <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
                 <tr>
                   <th className="px-4 py-2.5 font-semibold">Order</th><th className="px-4 py-2.5 font-semibold">Customer</th><th className="px-4 py-2.5 font-semibold">Method</th>
-                  <th className="px-4 py-2.5 font-semibold">Status</th><th className="px-4 py-2.5 font-semibold">Payment</th><th className="px-4 py-2.5 text-right font-semibold">Total</th>
+                  <th className="px-4 py-2.5 font-semibold">Status</th><th className="px-4 py-2.5 font-semibold">Payment</th><th className="px-4 py-2.5 text-right font-semibold">Total</th><th className="w-10"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {list.map((o) => (
-                  <tr key={o.id} className="cursor-pointer hover:bg-canvas" onClick={() => setOpen(o.id)}>
+                  <tr key={o.id} className={cx("group cursor-pointer hover:bg-canvas", o.id === openId && "bg-canvas")} onClick={() => setOpen(o.id)}>
                     <td className="px-4 py-3">
-                      <button className="num font-bold text-brand-700 hover:underline" onClick={(e) => { e.stopPropagation(); setOpen(o.id); }}>{o.number}</button>
-                      <span className="block text-[12px] text-text-3">{timeAgo(o.createdAt)}</span>
+                      <button className="num font-semibold text-text hover:underline" onClick={(e) => { e.stopPropagation(); setOpen(o.id); }}>{o.number}</button>
+                      <span className="block text-caption text-text-3">{timeAgo(o.createdAt)}</span>
                     </td>
-                    <td className="px-4 py-3"><span className="font-medium">{o.customer.name}</span><span className="num block text-[12px] text-text-3">{fmtPhone(o.customer.phone)}</span></td>
-                    <td className="px-4 py-3">{o.fulfilment === "pickup" ? "Pickup" : `Delivery · ${o.zoneName}`}<span className="block text-[12px] text-text-3">{plural(o.items.reduce((a, i) => a + i.qty, 0), "item")}</span></td>
+                    <td className="px-4 py-3"><span className="font-medium">{o.customer.name}</span><span className="num block text-caption text-text-3">{fmtPhone(o.customer.phone)}</span></td>
+                    <td className="px-4 py-3">{o.fulfilment === "pickup" ? "Pickup" : `Delivery · ${o.zoneName}`}<span className="block text-caption text-text-3">{plural(o.items.reduce((a, i) => a + i.qty, 0), "item")}</span></td>
                     <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
-                    <td className="px-4 py-3"><PaymentBadge status={o.paymentStatus} /><span className="block text-[12px] text-text-3">{PAYMENT_LABEL[o.paymentMethod]}</span></td>
+                    <td className="px-4 py-3"><PaymentBadge status={o.paymentStatus} /><span className="block text-caption text-text-3">{PAYMENT_LABEL[o.paymentMethod]}</span></td>
                     <td className="num px-4 py-3 text-right font-semibold">{money(o.total)}</td>
+                    <td className="pr-3 text-text-3"><ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden /></td>
                   </tr>
                 ))}
               </tbody>
@@ -206,7 +207,7 @@ function OrdersInner() {
               {list.map((o) => (
                 <li key={o.id}>
                   <button onClick={() => setOpen(o.id)} className="w-full px-4 py-3 text-left hover:bg-canvas">
-                    <span className="flex items-center justify-between gap-2"><span className="num font-bold text-brand-700">{o.number}</span><span className="num font-semibold">{money(o.total)}</span></span>
+                    <span className="flex items-center justify-between gap-2"><span className="num font-semibold">{o.number}</span><span className="num font-semibold">{money(o.total)}</span></span>
                     <span className="mt-0.5 block text-sm">{o.customer.name} <span className="text-text-3">· {o.fulfilment === "pickup" ? "Pickup" : "Delivery"} · {timeAgo(o.createdAt)}</span></span>
                     <span className="mt-2 flex flex-wrap gap-1.5"><StatusBadge status={o.status} /><PaymentBadge status={o.paymentStatus} /></span>
                   </button>

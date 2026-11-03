@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { Search, Warehouse, History, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck, PackageCheck, TriangleAlert, PackageX, Layers } from "lucide-react";
+import { Search, Warehouse, History, ArrowDownToLine, ArrowUpFromLine, ClipboardCheck } from "lucide-react";
 import type { MovementType, Product, ProductVariant } from "@/types";
 import { useStaff } from "@/hooks/useApp";
 import { adjustStock, type AdjustKind } from "@/lib/actions";
@@ -59,7 +59,7 @@ function AdjustDialog({ initial, onClose }: { initial: Row | null; onClose: () =
 
   return (
     <Dialog open onClose={onClose} title="Record stock movement" description="Every change is logged with your name and reason."
-      footer={<><Button variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" form="adj">Save</Button></>}>
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" form="adj">Save</Button></>}>
       <form id="adj" onSubmit={submit} noValidate className="space-y-4">
         <Segmented label="Movement type" value={kind} onChange={setKind} options={[
           { value: "stock_in", label: "Stock in" }, { value: "stock_out", label: "Stock out" }, { value: "adjustment", label: "Count" },
@@ -82,8 +82,8 @@ function AdjustDialog({ initial, onClose }: { initial: Row | null; onClose: () =
             <Input id="a-qty" inputMode="numeric" value={qty} onChange={(e) => { setQty(e.target.value.replace(/\D/g, "")); setErr(null); }} className="num" data-autofocus={initial ? true : undefined} />
           </Field>
           <div className="flex flex-col justify-end rounded-sm bg-canvas px-3 py-2 text-sm" aria-live="polite">
-            <span className="text-[12px] text-text-3">Stock</span>
-            <span className="num font-display text-lg font-bold">{v ? <>{v.stock} <span className="text-text-3">→</span> <span className={cx(after !== null && after < 0 && "text-danger-600")}>{after ?? "?"}</span></> : "—"}</span>
+            <span className="text-caption text-text-3">Stock</span>
+            <span className="num text-lg font-semibold">{v ? <>{v.stock} <span className="text-text-3">→</span> <span className={cx(after !== null && after < 0 && "text-danger-600")}>{after ?? "?"}</span></> : "—"}</span>
           </div>
         </div>
         <Field label="Reason" htmlFor="a-reason">
@@ -95,6 +95,17 @@ function AdjustDialog({ initial, onClose }: { initial: Row | null; onClose: () =
         {err && <p role="alert" className="text-sm font-medium text-danger-600">{err}</p>}
       </form>
     </Dialog>
+  );
+}
+
+/** Stock relative to 4× the low threshold: a quick visual read; the number stays authoritative. */
+function Meter({ stock, threshold }: { stock: number; threshold: number }) {
+  const lvl = stockLevel(stock, threshold);
+  const pct = Math.max(0, Math.min(1, stock / Math.max(1, threshold * 4)));
+  return (
+    <span className="hidden h-1.5 w-14 overflow-hidden rounded-full bg-sunken lg:block" aria-hidden>
+      <span className={cx("block h-full rounded-full", lvl === "in" ? "bg-success-600" : lvl === "low" ? "bg-marigold-500" : "bg-danger-600")} style={{ width: `${Math.max(pct, stock > 0 ? 0.06 : 0) * 100}%` }} />
+    </span>
   );
 }
 
@@ -129,26 +140,24 @@ function InventoryInner() {
   const low = rows.filter((r) => stockLevel(r.v.stock, th) === "low").length;
   const out = rows.filter((r) => r.v.stock <= 0).length;
   const units = rows.reduce((s, r) => s + r.v.stock, 0);
-  const tiles = [
-    { label: "Tracked variants", value: rows.length, icon: <Layers />, onClick: () => setLevel("") },
-    { label: "Units in stock", value: units.toLocaleString("en-KE"), icon: <PackageCheck />, onClick: () => setLevel("") },
-    { label: `Low stock (≤ ${th})`, value: low, icon: <TriangleAlert />, tone: "warn", onClick: () => { setTab("levels"); setLevel("low"); } },
-    { label: "Out of stock", value: out, icon: <PackageX />, tone: "danger", onClick: () => { setTab("levels"); setLevel("out"); } },
-  ];
+  const chip = (key: "low" | "out", n: number, label: string, tone: string) => (
+    <button type="button" aria-pressed={level === key} onClick={() => { setTab("levels"); setLevel(level === key ? "" : key); }}
+      className={cx("flex h-11 items-center gap-2.5 rounded-sm px-3.5 text-sm ring-1 ring-inset transition-colors",
+        level === key ? "bg-ink-900 text-white ring-ink-900" : "bg-surface ring-line hover:ring-text-3")}>
+      <span className={cx("h-2 w-2 rounded-full", tone)} aria-hidden />
+      <span className="num text-body font-semibold">{n}</span> {label}
+    </button>
+  );
 
   return (
     <div>
       <PageHeader title="Inventory" sub="One stock count for the website and the till. Sales and adjustments update it instantly."
         actions={canAdjust && <Button onClick={() => setAdjust({ row: null })}><ArrowDownToLine className="h-4 w-4" aria-hidden /> Record movement</Button>} />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {tiles.map((t) => (
-          <button key={t.label} onClick={t.onClick} className="rounded-md border border-line bg-surface p-4 text-left hover:border-ink-700">
-            <span className="flex items-center justify-between text-[13px] font-semibold text-text-2">{t.label}
-              <span className={cx("[&_svg]:h-4.5 [&_svg]:w-4.5", t.tone === "warn" ? "text-warning-600" : t.tone === "danger" ? "text-danger-600" : "text-text-3")} aria-hidden>{t.icon}</span></span>
-            <span className="num mt-2 block font-display text-[26px] font-bold leading-none">{t.value}</span>
-          </button>
-        ))}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {chip("out", out, "out of stock", "bg-danger-600")}
+        {chip("low", low, `running low (≤ ${th})`, "bg-marigold-500")}
+        <p className="num ml-1 text-small text-text-3">{rows.length} variants tracked · {units.toLocaleString("en-KE")} units on the shelf</p>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -182,19 +191,19 @@ function InventoryInner() {
                 <ProductImage src={p.images[0]} alt="" className="h-11 w-11 shrink-0 rounded-sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{p.name}</p>
-                  <p className="num truncate text-[12px] text-text-3">{v.label} · {v.sku}</p>
+                  <p className="num truncate text-caption text-text-3">{v.label} · {v.sku}</p>
                   <div className="mt-1"><StockBadge stock={v.stock} threshold={th} /></div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="num font-display text-lg font-bold leading-none">{v.stock}</span>
-                  {canAdjust && <Button size="sm" variant="outline" onClick={() => setAdjust({ row: { p, v } })} aria-label={`Adjust stock for ${p.name} ${v.label}`}>Adjust</Button>}
+                  <span className="num text-lg font-semibold leading-none">{v.stock}</span>
+                  {canAdjust && <Button size="sm" variant="secondary" onClick={() => setAdjust({ row: { p, v } })} aria-label={`Adjust stock for ${p.name} ${v.label}`}>Adjust</Button>}
                 </div>
               </li>
             ))}
           </ul>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-line bg-canvas text-left text-[12px] uppercase tracking-wider text-text-3">
+              <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
                 <tr><th className="px-4 py-2.5 font-semibold">Product</th><th className="px-4 py-2.5 font-semibold">SKU</th><th className="px-4 py-2.5 text-right font-semibold">Qty</th>
                   <th className="px-4 py-2.5 font-semibold">Status</th><th className="px-4 py-2.5 font-semibold">Last updated</th>{canAdjust && <th className="px-4 py-2.5"><span className="sr-only">Actions</span></th>}</tr>
               </thead>
@@ -202,12 +211,12 @@ function InventoryInner() {
                 {filtered.map(({ p, v }) => (
                   <tr key={v.id} className="hover:bg-canvas">
                     <td className="px-4 py-2.5"><div className="flex items-center gap-3"><ProductImage src={p.images[0]} alt="" className="h-9 w-9 shrink-0 rounded-sm" />
-                      <div className="min-w-0"><p className="max-w-[300px] truncate font-semibold">{p.name}</p><p className="text-[12px] text-text-3">{v.label}{!p.published && " · hidden"}</p></div></div></td>
+                      <div className="min-w-0"><p className="max-w-[300px] truncate font-medium">{p.name}</p><p className="text-caption text-text-3">{v.label}{!p.published && " · hidden"}</p></div></div></td>
                     <td className="num px-4 py-2.5 text-text-2">{v.sku}</td>
-                    <td className="num px-4 py-2.5 text-right font-display text-base font-bold">{v.stock}</td>
+                    <td className="px-4 py-2.5 text-right"><span className="inline-flex items-center gap-2.5"><Meter stock={v.stock} threshold={th} /><span className="num w-8 font-semibold">{v.stock}</span></span></td>
                     <td className="px-4 py-2.5"><StockBadge stock={v.stock} threshold={th} /></td>
                     <td className="px-4 py-2.5 text-text-2" title={fmtDateTime(v.updatedAt)}>{timeAgo(v.updatedAt)}</td>
-                    {canAdjust && <td className="px-4 py-2.5 text-right"><Button size="sm" variant="outline" onClick={() => setAdjust({ row: { p, v } })} aria-label={`Adjust stock for ${p.name} ${v.label}`}>Adjust</Button></td>}
+                    {canAdjust && <td className="px-4 py-2.5 text-right"><Button size="sm" variant="secondary" onClick={() => setAdjust({ row: { p, v } })} aria-label={`Adjust stock for ${p.name} ${v.label}`}>Adjust</Button></td>}
                   </tr>
                 ))}
               </tbody>
@@ -220,16 +229,16 @@ function InventoryInner() {
             {moves.map((m) => (
               <li key={m.id} className="px-4 py-3 text-sm">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0"><b className="block truncate">{m.productName}</b><span className="text-[12px] text-text-3">{m.variantLabel} · {MOVE_LABEL[m.type]}</span></p>
-                  <span className={cx("num shrink-0 text-right font-bold", m.change > 0 ? "text-success-600" : "text-text")}>{m.change > 0 ? `+${m.change}` : m.change}<span className="block text-[12px] font-normal text-text-3">{m.before} → {m.after}</span></span>
+                  <p className="min-w-0"><b className="block truncate">{m.productName}</b><span className="text-caption text-text-3">{m.variantLabel} · {MOVE_LABEL[m.type]}</span></p>
+                  <span className={cx("num shrink-0 text-right font-bold", m.change > 0 ? "text-success-600" : "text-text")}>{m.change > 0 ? `+${m.change}` : m.change}<span className="block text-caption font-normal text-text-3">{m.before} → {m.after}</span></span>
                 </div>
-                <p className="mt-1 text-[12px] text-text-2">{m.reason}{m.ref ? ` · ${m.ref}` : ""} · {m.staffName} · <span className="num">{fmtDateTime(m.at)}</span></p>
+                <p className="mt-1 text-caption text-text-2">{m.reason}{m.ref ? ` · ${m.ref}` : ""} · {m.staffName} · <span className="num">{fmtDateTime(m.at)}</span></p>
               </li>
             ))}
           </ul>
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[820px] text-sm">
-              <thead className="border-b border-line bg-canvas text-left text-[12px] uppercase tracking-wider text-text-3">
+              <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
                 <tr><th className="px-4 py-2.5 font-semibold">When</th><th className="px-4 py-2.5 font-semibold">Product</th><th className="px-4 py-2.5 font-semibold">Type</th>
                   <th className="px-4 py-2.5 text-right font-semibold">Change</th><th className="px-4 py-2.5 text-right font-semibold">Stock</th><th className="px-4 py-2.5 font-semibold">Reason</th><th className="px-4 py-2.5 font-semibold">By</th></tr>
               </thead>
@@ -237,11 +246,11 @@ function InventoryInner() {
                 {moves.map((m) => (
                   <tr key={m.id}>
                     <td className="num whitespace-nowrap px-4 py-2.5 text-text-2">{fmtDateTime(m.at)}</td>
-                    <td className="px-4 py-2.5"><p className="max-w-[240px] truncate font-medium">{m.productName}</p><p className="text-[12px] text-text-3">{m.variantLabel}</p></td>
+                    <td className="px-4 py-2.5"><p className="max-w-[240px] truncate font-medium">{m.productName}</p><p className="text-caption text-text-3">{m.variantLabel}</p></td>
                     <td className="px-4 py-2.5"><Badge tone={m.change > 0 ? "success" : m.type === "adjustment" ? "info" : "neutral"}>{m.change > 0 ? <ArrowDownToLine className="h-3 w-3" aria-hidden /> : m.type === "adjustment" ? <ClipboardCheck className="h-3 w-3" aria-hidden /> : <ArrowUpFromLine className="h-3 w-3" aria-hidden />}{MOVE_LABEL[m.type]}</Badge></td>
                     <td className={cx("num px-4 py-2.5 text-right font-bold", m.change > 0 ? "text-success-600" : "text-text")}>{m.change > 0 ? `+${m.change}` : m.change}</td>
                     <td className="num whitespace-nowrap px-4 py-2.5 text-right text-text-2">{m.before} → <b className="text-text">{m.after}</b></td>
-                    <td className="px-4 py-2.5 text-text-2">{m.reason}{m.ref && <span className="num block text-[12px] text-text-3">{m.ref}</span>}</td>
+                    <td className="px-4 py-2.5 text-text-2">{m.reason}{m.ref && <span className="num block text-caption text-text-3">{m.ref}</span>}</td>
                     <td className="px-4 py-2.5">{m.staffName}</td>
                   </tr>
                 ))}

@@ -25,9 +25,9 @@ function receiptText(s: PosSale, shop: string) {
 
 function Receipt({ sale, shop, phone }: { sale: PosSale; shop: string; phone: string }) {
   return (
-    <div className="print-area mx-auto max-w-[320px] bg-surface font-mono text-[12px] leading-relaxed text-text">
+    <div className="print-area mx-auto max-w-[320px] bg-surface font-mono text-caption leading-relaxed text-text">
       <div className="text-center">
-        <p className="font-sans text-[15px] font-extrabold">{shop}</p>
+        <p className="font-sans text-body font-bold">{shop}</p>
         <p>{phone}</p>
         <p className="mt-1">Receipt <b>{sale.receiptNo}</b></p>
         <p>{fmtDateTime(sale.createdAt)} · {sale.cashierName}</p>
@@ -70,6 +70,15 @@ export function PosPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { searchRef.current?.focus(); }, []);
+  // "/" jumps back to search from anywhere on the till (unless typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) { e.preventDefault(); searchRef.current?.focus(); searchRef.current?.select(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   const products = useMemo(() => {
     if (!snap) return [];
@@ -86,6 +95,8 @@ export function PosPage() {
   const cash = /^\d+$/.test(tendered) ? parseInt(tendered, 10) : 0;
   const change = cash - total;
   const ready = rows.length > 0 && (pay === "cash" ? cash >= total : /^[A-Z0-9]{10}$/.test(code));
+  const missing = rows.length === 0 ? "Add an item to start a sale." : pay === "cash" ? (cash < total ? (tendered ? `Still owed ${money(total - cash)}.` : "Enter the cash received.") : "")
+    : /^[A-Z0-9]{10}$/.test(code) ? "" : "Enter the 10-character M-Pesa code.";
 
   const add = (productId: string, variantId: string) => {
     const hit = findVariant(snap.data, productId, variantId);
@@ -125,34 +136,34 @@ export function PosPage() {
             {rows.map(({ l, hit: { product: p, variant: v } }) => (
               <li key={v.id} className="flex gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-semibold">{p.name}</p>
-                  <p className="num text-[12px] text-text-3">{v.label} · {money(v.price)} · {v.stock} in stock</p>
+                  <p className="line-clamp-1 text-sm font-medium">{p.name}</p>
+                  <p className="num text-caption text-text-3">{v.label} · {money(v.price)} · {v.stock} in stock</p>
                   <div className="mt-2 flex items-center gap-2">
                     <QtyStepper size="sm" value={l.qty} max={v.stock} onChange={(n) => setLines((ls) => ls.map((x) => x.variantId === v.id ? { ...x, qty: n } : x))} label={`Quantity of ${p.name}`} />
                     <Button variant="ghost" size="icon-sm" aria-label={`Remove ${p.name}`} onClick={() => setLines((ls) => ls.filter((x) => x.variantId !== v.id))}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
-                <span className="num text-sm font-bold">{money(v.price * l.qty)}</span>
+                <span className="num text-sm font-semibold">{money(v.price * l.qty)}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
-      <div className="space-y-3 border-t border-line bg-canvas/70 p-4">
+      <div className="space-y-3 border-t border-line bg-canvas p-4">
         <div className="flex items-baseline justify-between"><span className="font-semibold">Total <span className="num font-normal text-text-3">· {count === 1 ? "1 item" : `${count} items`}</span></span><Price value={total} size="xl" /></div>
-        <Segmented label="Payment method" value={pay} onChange={setPay} options={[{ value: "cash", label: <><Banknote className="h-4 w-4" aria-hidden /> Cash</> }, { value: "mpesa", label: <><Smartphone className="h-4 w-4" aria-hidden /> M-Pesa</> }]} />
+        <Segmented block label="Payment method" value={pay} onChange={setPay} options={[{ value: "cash", label: <><Banknote className="h-4 w-4" aria-hidden /> Cash</> }, { value: "mpesa", label: <><Smartphone className="h-4 w-4" aria-hidden /> M-Pesa</> }]} />
         {pay === "cash" ? (
           <div>
             <Field label="Cash received (KES)" htmlFor="pos-cash">
               <Input id="pos-cash" inputMode="numeric" value={tendered} onChange={(e) => setTendered(e.target.value.replace(/\D/g, ""))} className="num h-11 text-lg font-semibold" />
             </Field>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex gap-1.5">
               {[total, Math.ceil(total / 100) * 100, Math.ceil(total / 500) * 500, Math.ceil(total / 1000) * 1000].filter((v, i, a) => v > 0 && a.indexOf(v) === i).map((v) => (
-                <button key={v} type="button" onClick={() => setTendered(String(v))} className="num rounded-xs border border-line-strong bg-surface px-2 py-1 text-[12px] font-semibold hover:border-ink-700">{v === total ? "Exact" : money(v)}</button>
+                <button key={v} type="button" onClick={() => setTendered(String(v))} className="num h-10 flex-1 rounded-sm bg-surface px-2 text-small font-semibold ring-1 ring-inset ring-line-strong hover:ring-text-3">{v === total ? "Exact" : money(v)}</button>
               ))}
             </div>
             <p className={cx("num mt-2 flex justify-between rounded-sm px-3 py-2 text-sm font-semibold", tendered && change < 0 ? "bg-danger-100 text-danger-600" : "bg-surface")} aria-live="polite">
-              <span>{tendered && change < 0 ? "Still owed" : "Change"}</span><span className="font-display text-base">{money(Math.abs(tendered ? change : 0))}</span>
+              <span>{tendered && change < 0 ? "Still owed" : "Change"}</span><span className="num text-body">{money(Math.abs(tendered ? change : 0))}</span>
             </p>
           </div>
         ) : (
@@ -160,7 +171,10 @@ export function PosPage() {
             <Input id="pos-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10))} placeholder="SKL4XT9Q2M" className="num h-11 uppercase tracking-wider" aria-describedby="pos-code-hint" />
           </Field>
         )}
-        <Button size="lg" variant="accent" block disabled={!ready} onClick={finish}>Complete sale · {money(total)}</Button>
+        <div>
+          <Button size="lg" variant="accent" block disabled={!ready} onClick={finish} aria-describedby={missing ? "pos-missing" : undefined}>Complete sale · {money(total)}</Button>
+          {missing && <p id="pos-missing" className="mt-2 text-center text-caption text-text-3">{missing}</p>}
+        </div>
       </div>
     </div>
   );
@@ -168,35 +182,38 @@ export function PosPage() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-        <div><h1 className="text-[24px] sm:text-[28px]">Point of sale</h1><p className="text-sm text-text-2">Cashier: {staff?.name} · Sales come off the same stock as the website.</p></div>
+        <div><h1 className="text-[1.5rem] sm:text-[1.75rem]">Point of sale</h1><p className="text-sm text-text-2">Cashier: {staff?.name} · Sales come off the same stock as the website.</p></div>
       </div>
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <section aria-label="Products" className="min-w-0">
           <form className="relative" onSubmit={(e) => { e.preventDefault(); onSearchEnter(); }}>
             <label htmlFor="pos-q" className="sr-only">Search product or scan SKU</label>
             <ScanBarcode className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-text-3" aria-hidden />
-            <Input ref={searchRef} id="pos-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search or scan SKU (e.g. DL-001-2), then Enter" className="h-12 pl-11 text-base" autoComplete="off" />
+            <Input ref={searchRef} id="pos-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search or scan a SKU, then Enter…" className="h-12 pl-11 pr-12 text-base" autoComplete="off" spellCheck={false} />
+            <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-xs bg-sunken px-1.5 text-caption text-text-3 ring-1 ring-inset ring-line sm:block" aria-hidden>/</kbd>
           </form>
-          <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+          <div className="scroll-row mt-3 gap-1.5 pb-1">
             {[{ id: "", name: "All" }, ...snap.data.categories].map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)} aria-pressed={cat === c.id}
-                className={cx("shrink-0 rounded-xs border px-2.5 py-1 text-[13px] font-semibold", cat === c.id ? "border-ink-800 bg-ink-800 text-white" : "border-line-strong bg-surface hover:border-ink-700")}>{c.name}</button>
+                className={cx("h-8 shrink-0 rounded-full px-3.5 text-small font-medium ring-1 ring-inset transition-colors", cat === c.id ? "bg-ink-900 text-white ring-ink-900" : "bg-surface text-text-2 ring-line-strong hover:text-text")}>{c.name}</button>
             ))}
           </div>
           {products.length === 0 ? <EmptyState icon={<Search />} title="No match" body="Check the spelling or SKU." /> : (
-            <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+            <ul className="mt-3 grid grid-cols-1 gap-2 xs:grid-cols-2 xl:grid-cols-3">
               {products.map((p) => {
                 const stock = p.variants.reduce((s, v) => s + v.stock, 0);
                 const prices = p.variants.filter((v) => v.price > 0).map((v) => v.price);
+                const multi = p.variants.filter((v) => v.price > 0).length > 1;
                 return (
                   <li key={p.id}>
-                    <button onClick={() => choose(p)} disabled={stock <= 0} className="flex h-full w-full flex-col overflow-hidden rounded-md border border-line bg-surface text-left hover:border-brand-600 disabled:opacity-50 disabled:hover:border-line">
-                      <ProductImage src={p.images[0]} alt="" className="aspect-[4/3] w-full" />
-                      <span className="flex flex-1 flex-col p-2.5">
-                        <span className="line-clamp-2 text-[13px] font-semibold leading-snug">{p.name}</span>
-                        <span className="mt-auto flex items-baseline justify-between gap-1 pt-1.5">
-                          <span className="num text-sm font-bold">{Math.min(...prices) !== Math.max(...prices) ? "from " : ""}{money(Math.min(...prices))}</span>
-                          <span className={cx("num text-[11px]", stock <= 0 ? "font-semibold text-danger-600" : "text-text-3")}>{stock <= 0 ? "Out" : `${stock} left`}</span>
+                    <button onClick={() => choose(p)} disabled={stock <= 0}
+                      className="flex h-full w-full items-center gap-3 rounded-md bg-surface p-2 text-left ring-1 ring-line transition-shadow hover:ring-ink-900 active:bg-sunken disabled:opacity-50 disabled:hover:ring-line">
+                      <ProductImage src={p.images[0]} alt="" className="h-14 w-14 shrink-0 rounded-sm" />
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="line-clamp-2 text-small font-medium leading-snug">{p.name}</span>
+                        <span className="mt-1 flex items-baseline justify-between gap-2">
+                          <span className="num text-sm font-semibold">{Math.min(...prices) !== Math.max(...prices) ? <span className="text-caption font-normal text-text-3">from </span> : null}{money(Math.min(...prices))}</span>
+                          <span className={cx("num text-caption", stock <= 0 ? "font-semibold text-danger-600" : "text-text-3")}>{stock <= 0 ? "Out" : `${stock} left`}{multi && stock > 0 ? " · options" : ""}</span>
                         </span>
                       </span>
                     </button>
@@ -207,15 +224,18 @@ export function PosPage() {
           )}
         </section>
 
-        <aside className="sticky top-20 hidden h-[calc(100dvh-7rem)] overflow-hidden rounded-md border border-line bg-surface lg:block" aria-label="Current sale">
-          <h2 className="border-b border-line px-4 py-3 text-lg">Current sale</h2>
-          <div className="h-[calc(100%-53px)]">{cartPanel}</div>
+        <aside className="sticky top-7 hidden h-[calc(100dvh-3.5rem)] max-h-[860px] flex-col overflow-hidden rounded-md border border-line bg-surface lg:flex" aria-label="Current sale">
+          <div className="flex h-12 shrink-0 items-center justify-between border-b border-line px-4">
+            <h2 className="font-sans text-subhead font-semibold tracking-normal">Current sale</h2>
+            {rows.length > 0 && <Button variant="ghost" size="sm" onClick={() => setLines([])}>Clear</Button>}
+          </div>
+          <div className="min-h-0 flex-1">{cartPanel}</div>
         </aside>
       </div>
 
       {/* Mobile sale bar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface p-3 lg:hidden">
-        <Button size="lg" variant={count ? "accent" : "outline"} block onClick={() => setCartOpen(true)}>
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-bar lg:hidden">
+        <Button size="lg" variant={count ? "primary" : "secondary"} block onClick={() => setCartOpen(true)}>
           <ShoppingCart className="h-5 w-5" aria-hidden /> Current sale · {count === 1 ? "1 item" : `${count} items`} · {money(total)}
         </Button>
       </div>
@@ -228,9 +248,9 @@ export function PosPage() {
             {pick.variants.filter((v) => v.price > 0).map((v) => (
               <li key={v.id}>
                 <button disabled={v.stock <= 0} onClick={() => { add(pick.id, v.id); setPick(null); }}
-                  className="flex w-full items-center justify-between rounded-sm border border-line-strong px-3 py-2.5 text-left hover:border-brand-600 disabled:opacity-50">
-                  <span><b className="text-sm">{v.label}</b><span className="num block text-[12px] text-text-3">{v.sku} · {v.stock} in stock</span></span>
-                  <span className="num flex items-center gap-2 font-bold">{money(v.price)} <Plus className="h-4 w-4 text-brand-600" aria-hidden /></span>
+                  className="flex min-h-14 w-full items-center justify-between rounded-sm px-3 py-2.5 text-left ring-1 ring-inset ring-line-strong hover:ring-ink-900 disabled:opacity-50">
+                  <span><b className="text-sm">{v.label}</b><span className="num block text-caption text-text-3">{v.sku} · {v.stock} in stock</span></span>
+                  <span className="num flex items-center gap-2 font-semibold">{money(v.price)} <Plus className="h-4 w-4 text-text-3" aria-hidden /></span>
                 </button>
               </li>
             ))}
@@ -241,8 +261,8 @@ export function PosPage() {
       {receipt && (
         <Dialog open onClose={newSale} title={<span className="flex items-center gap-2"><CircleCheck className="h-5 w-5 text-success-600" aria-hidden /> Sale complete</span>} size="sm"
           footer={<>
-            <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" aria-hidden /> Print</Button>
-            <Button variant="outline" onClick={async () => {
+            <Button variant="secondary" onClick={() => window.print()}><Printer className="h-4 w-4" aria-hidden /> Print</Button>
+            <Button variant="secondary" onClick={async () => {
               const text = receiptText(receipt, settings.shopName);
               try {
                 if (navigator.share) await navigator.share({ title: `Receipt ${receipt.receiptNo}`, text });
@@ -252,7 +272,7 @@ export function PosPage() {
             <Button onClick={newSale} data-autofocus>New sale</Button>
           </>}>
           {receipt.payment === "cash" && (receipt.change ?? 0) > 0 && (
-            <p className="mb-4 rounded-sm bg-success-100 px-4 py-3 text-center"><span className="block text-[12px] font-semibold uppercase tracking-wider text-success-600">Give change</span><span className="num font-display text-[28px] font-bold">{money(receipt.change ?? 0)}</span></p>
+            <p className="mb-4 rounded-sm bg-success-100 px-4 py-3 text-center"><span className="block text-caption font-semibold text-success-700">Give change</span><span className="num text-[1.75rem] font-semibold">{money(receipt.change ?? 0)}</span></p>
           )}
           <div className="rounded-sm border border-line p-4"><Receipt sale={receipt} shop={settings.shopName} phone={settings.phone} /></div>
         </Dialog>

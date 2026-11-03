@@ -136,6 +136,19 @@ export function Checkbox({ id, label, checked, onChange, description, className 
   );
 }
 
+/** On/off switch for an immediate setting (no save step). Label is the accessible name; state is announced. */
+export function Switch({ checked, onChange, label, disabled, showText = true }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean; showText?: boolean }) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={() => onChange(!checked)}
+      className="group/sw inline-flex min-h-8 shrink-0 items-center gap-2 rounded-sm text-small font-medium disabled:cursor-not-allowed disabled:opacity-50">
+      <span className={cx("relative h-5 w-9 rounded-full transition-colors", checked ? "bg-success-600" : "bg-line-strong group-hover/sw:bg-field")} aria-hidden>
+        <span className={cx("absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-pop transition-transform", checked ? "translate-x-[18px]" : "translate-x-0.5")} />
+      </span>
+      {showText && <span className={checked ? "text-text" : "text-text-3"} aria-hidden>{checked ? "Live" : "Hidden"}</span>}
+    </button>
+  );
+}
+
 /* ───────── Badge ───────── */
 
 export type Tone = "neutral" | "brand" | "accent" | "success" | "warning" | "danger" | "info" | "ink";

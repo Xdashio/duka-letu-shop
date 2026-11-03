@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, RotateCcw, Save } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Save, Check } from "lucide-react";
 import type { Settings } from "@/types";
 import { useStaff } from "@/hooks/useApp";
 import { resetDemoData, saveSettings } from "@/lib/actions";
@@ -12,9 +12,9 @@ import { PageHeader } from "./StaffShell";
 
 function Section({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
   return (
-    <section className="grid gap-4 border-b border-line py-7 first:pt-0 last:border-0 lg:grid-cols-[260px_1fr] lg:gap-10">
-      <div><h2 className="text-lg">{title}</h2><p className="mt-1 text-sm text-text-2">{sub}</p></div>
-      <div className="rounded-md border border-line bg-surface p-5">{children}</div>
+    <section className="grid gap-4 border-b border-line py-8 first:pt-0 last:border-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-12">
+      <div><h2 className="font-sans text-subhead font-semibold tracking-normal">{title}</h2><p className="mt-1 text-sm text-text-2">{sub}</p></div>
+      <div className="rounded-md border border-line bg-surface p-5 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -40,7 +40,7 @@ export function SettingsPage() {
   return (
     <form noValidate onSubmit={(e) => { e.preventDefault(); attempt(() => { saveSettings(s); return true; }, "Settings saved. The storefront is updated."); }}>
       <PageHeader title="Settings" sub="Shop details, payments, delivery and stock rules. Changes apply across the storefront and staff app."
-        actions={<Button type="submit" disabled={!dirty}><Save className="h-4 w-4" aria-hidden /> {dirty ? "Save changes" : "Saved"}</Button>} />
+        actions={!dirty && <span className="flex h-10 items-center gap-1.5 text-small text-text-3"><Check className="h-4 w-4" aria-hidden /> All changes saved</span>} />
 
       <Section title="Shop details" sub="Placeholders until the owner confirms the real details.">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -65,7 +65,7 @@ export function SettingsPage() {
       <Section title="Delivery zones" sub="Customers pick a zone at checkout and the fee is added automatically. Pickup is always free.">
         <ul className="space-y-2">
           {s.zones.map((z, i) => (
-            <li key={z.id} className="grid grid-cols-[1fr_110px_auto] items-end gap-2 rounded-sm bg-canvas/70 p-2.5 sm:grid-cols-[140px_1fr_120px_auto]">
+            <li key={z.id} className="grid grid-cols-[1fr_110px_auto] items-end gap-x-2 gap-y-3 rounded-sm bg-canvas p-3 sm:grid-cols-[140px_1fr_120px_auto]">
               <Field label="Zone name" htmlFor={`z${i}n`}><Input id={`z${i}n`} value={z.name} onChange={(e) => setZone(i, { name: e.target.value })} className="h-9" /></Field>
               <Field label="Areas covered" htmlFor={`z${i}a`} className="col-span-3 row-start-2 sm:col-span-1 sm:row-start-auto"><Input id={`z${i}a`} value={z.areas} onChange={(e) => setZone(i, { areas: e.target.value })} className="h-9" /></Field>
               <Field label="Fee (KES)" htmlFor={`z${i}f`}><Input id={`z${i}f`} inputMode="numeric" value={String(z.fee)} onChange={(e) => setZone(i, { fee: parseInt(e.target.value.replace(/\D/g, "") || "0", 10) })} className="num h-9" /></Field>
@@ -73,7 +73,7 @@ export function SettingsPage() {
             </li>
           ))}
         </ul>
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => set("zones", [...s.zones, { id: uid("zone"), name: `Zone ${s.zones.length + 1}`, areas: "", fee: 0 }])}>
+        <Button variant="secondary" size="sm" className="mt-3" onClick={() => set("zones", [...s.zones, { id: uid("zone"), name: `Zone ${s.zones.length + 1}`, areas: "", fee: 0 }])}>
           <Plus className="h-4 w-4" aria-hidden /> Add zone
         </Button>
       </Section>
@@ -82,18 +82,18 @@ export function SettingsPage() {
         <Field label="Low-stock threshold" htmlFor="st-th" className="max-w-40">
           <Input id="st-th" inputMode="numeric" value={String(s.lowStockThreshold)} onChange={(e) => set("lowStockThreshold", parseInt(e.target.value.replace(/\D/g, "") || "0", 10))} className="num" />
         </Field>
-        <p className="mt-4 text-sm text-text-2">Currency: <b>Kenyan shilling (KES)</b></p>
+        <p className="mt-4 text-sm text-text-2">Currency: <b className="font-semibold text-text">Kenyan shilling (KES)</b></p>
       </Section>
 
       <Section title="Demo data" sub="Restore the original sample catalogue, orders and sales. Useful before showing the prototype to someone new.">
         <Button variant="danger" onClick={() => setReset(true)}><RotateCcw className="h-4 w-4" aria-hidden /> Reset demo data</Button>
-        <p className="mt-2 text-[13px] text-text-3">Uploaded photos stay in this browser but are no longer linked to any product.</p>
+        <p className="mt-2 text-small text-text-3">Uploaded photos stay in this browser but are no longer linked to any product.</p>
       </Section>
 
       {dirty && (
-        <div className="sticky bottom-4 z-10 mt-4 flex items-center justify-between gap-3 rounded-md bg-ink-900 px-4 py-3 text-sm text-white shadow-pop">
+        <div className="anim-rise sticky bottom-4 z-10 mt-4 flex items-center justify-between gap-3 rounded-md bg-ink-900 px-4 py-3 text-sm text-white shadow-dialog" role="status">
           <span>You have unsaved changes</span>
-          <span className="flex gap-2"><Button variant="inverse" size="sm" onClick={() => setS(structuredClone(saved!))}>Discard</Button><Button variant="accent" size="sm" type="submit">Save changes</Button></span>
+          <span className="flex gap-2"><Button variant="inverse" size="sm" onClick={() => setS(structuredClone(saved!))}>Discard</Button><Button variant="accent" size="sm" type="submit"><Save className="h-4 w-4" aria-hidden /> Save changes</Button></span>
         </div>
       )}
 
