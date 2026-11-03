@@ -47,14 +47,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <div key={t.id} role={t.kind === "error" ? "alert" : "status"}
             className="anim-rise pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md bg-ink-900 px-4 py-3 text-white shadow-pop">
-            {t.kind === "success" ? <CircleCheck className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#7dd3a8]" aria-hidden />
-              : t.kind === "error" ? <CircleAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-[#f4a09a]" aria-hidden />
-              : <Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-marigold-500" aria-hidden />}
+            {t.kind === "success" ? <CircleCheck className="mt-0.5 h-[18px] w-[18px] shrink-0 text-success-100" aria-hidden />
+              : t.kind === "error" ? <CircleAlert className="mt-0.5 h-[18px] w-[18px] shrink-0 text-danger-100" aria-hidden />
+              : <Info className="mt-0.5 h-[18px] w-[18px] shrink-0 text-marigold-500" aria-hidden />}
             <div className="min-w-0 flex-1 text-sm">
               <p className="font-semibold">{t.title}</p>
               {t.body && <p className="mt-0.5 text-white/75">{t.body}</p>}
               {t.action && (
-                <button className="mt-1.5 text-[13px] font-semibold text-marigold-500 underline-offset-2 hover:underline"
+                <button className="mt-1.5 text-small font-semibold text-marigold-500 underline-offset-2 hover:underline"
                   onClick={() => { t.action!.onClick(); dismiss(t.id); }}>{t.action.label}</button>
               )}
             </div>

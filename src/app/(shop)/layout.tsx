@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-surface">
       <SiteHeader />
       <main id="main" className="flex-1">{children}</main>
       <SiteFooter />

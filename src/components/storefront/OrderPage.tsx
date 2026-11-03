@@ -11,7 +11,7 @@ import { fmtDateTime, fmtPhone, money } from "@/lib/format";
 import { ProductImage } from "../shared/ProductImage";
 import { OrderTracker, PaymentBadge, StatusBadge, StatusHistory } from "../shared/OrderBits";
 import { Price } from "../shared/bits";
-import { Button, EmptyState, Skeleton } from "../shared/ui";
+import { Button, EmptyState, Skeleton, buttonClass } from "../shared/ui";
 import { useToast } from "../shared/toast";
 import { MpesaDialog } from "./MpesaDialog";
 
@@ -50,52 +50,57 @@ export function OrderDetailView({ order: o, settings, showConfirmHero }: { order
   return (
     <div className="mx-auto max-w-4xl">
       {showConfirmHero && (
-        <div className="mb-6 flex flex-col items-start gap-4 rounded-md bg-ink-900 p-5 text-white sm:flex-row sm:items-center sm:p-6">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-success-600"><CircleCheck className="h-6 w-6" aria-hidden /></span>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-[24px] sm:text-[28px]">Thank you, {o.customer.name.split(" ")[0]}!</h1>
-            <p className="mt-1 text-white/75">Your order has been received. Save your order number to track it.</p>
+        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-600"><CircleCheck className="h-6 w-6" aria-hidden /></span>
+            <div className="min-w-0">
+              <h1 className="text-[1.625rem] sm:text-title">Thank you, {o.customer.name.split(" ")[0]}</h1>
+              <p className="mt-1 text-text-2">Your order is in. Keep the order number to track it.</p>
+            </div>
           </div>
-          <div className="rounded-sm bg-white/10 px-4 py-2.5 text-center">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-white/60">Order number</span>
-            <span className="num font-display text-[24px] font-bold text-marigold-500">{o.number}</span>
-            <button onClick={() => { navigator.clipboard?.writeText(o.number).then(() => toast({ kind: "success", title: "Order number copied" }), () => {}); }}
-              className="mx-auto mt-0.5 flex items-center gap-1 text-[12px] text-white/70 hover:text-white"><Copy className="h-3 w-3" aria-hidden /> Copy</button>
+          <div className="flex items-center gap-3 rounded-md bg-canvas px-4 py-3 sm:shrink-0">
+            <div>
+              <span className="block text-caption text-text-3">Order number</span>
+              <span className="num text-[1.375rem] font-semibold tracking-tight">{o.number}</span>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard?.writeText(o.number).then(() => toast({ kind: "success", title: "Order number copied" }), () => {}); }}>
+              <Copy className="h-3.5 w-3.5" aria-hidden /> Copy
+            </Button>
           </div>
         </div>
       )}
 
       {canPay && (
-        <div role="alert" className="mb-6 flex flex-col gap-3 rounded-md border border-warning-100 bg-warning-100/70 p-4 sm:flex-row sm:items-center">
+        <div role="alert" className="mb-6 flex flex-col gap-3 rounded-md bg-warning-100/80 p-4 sm:flex-row sm:items-center">
           <Clock className="h-5 w-5 shrink-0 text-warning-600" aria-hidden />
           <div className="flex-1 text-sm">
             <p className="font-semibold">{o.paymentStatus === "failed" ? "Payment didn’t go through" : "Awaiting M-Pesa payment"}</p>
             <p className="text-text-2">Pay {money(o.total)} via {PAYMENT_LABEL[o.paymentMethod]} to confirm your order.</p>
           </div>
-          <Button variant="success" onClick={() => setPay(true)}>Pay {money(o.total)} now</Button>
+          <Button onClick={() => setPay(true)}>Pay {money(o.total)} now</Button>
         </div>
       )}
 
       <section className="rounded-md border border-line bg-surface p-5 sm:p-6" aria-labelledby="prog">
         <div className="mb-6 flex flex-wrap items-center gap-2">
-          <h2 id="prog" className="mr-auto text-lg">{showConfirmHero ? "Order progress" : `Order ${o.number}`}</h2>
+          <h2 id="prog" className="mr-auto font-sans text-subhead font-semibold tracking-normal">{showConfirmHero ? "Order progress" : `Order ${o.number}`}</h2>
           <StatusBadge status={o.status} />
           <PaymentBadge status={o.paymentStatus} />
         </div>
         <OrderTracker order={o} />
-        <p className="mt-6 rounded-sm bg-canvas px-4 py-3 text-sm"><b>Next: </b>{nextSteps(o)}</p>
+        <p className="mt-6 rounded-sm bg-canvas px-4 py-3 text-sm"><b className="font-semibold">What happens next: </b>{nextSteps(o)}</p>
       </section>
 
       <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section className="rounded-md border border-line bg-surface" aria-labelledby="items">
-          <h2 id="items" className="border-b border-line px-5 py-4 text-lg">Items</h2>
+          <h2 id="items" className="border-b border-line px-5 py-4 font-sans text-subhead font-semibold tracking-normal">Items</h2>
           <ul className="divide-y divide-line px-5">
             {o.items.map((i) => (
               <li key={i.variantId} className="flex gap-3 py-3">
                 <ProductImage src={i.image} alt="" className="h-14 w-14 shrink-0 rounded-sm" />
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="line-clamp-2 font-semibold">{i.name}</p>
-                  <p className="num text-[13px] text-text-2">{i.variantLabel} · {i.qty} × {money(i.unitPrice)}</p>
+                  <p className="num text-small text-text-2">{i.variantLabel} · {i.qty} × {money(i.unitPrice)}</p>
                 </div>
                 <span className="num text-sm font-semibold">{money(i.qty * i.unitPrice)}</span>
               </li>
@@ -110,26 +115,26 @@ export function OrderDetailView({ order: o, settings, showConfirmHero }: { order
 
         <div className="space-y-6">
           <section className="rounded-md border border-line bg-surface p-5 text-sm" aria-labelledby="det">
-            <h2 id="det" className="text-lg">Details</h2>
+            <h2 id="det" className="font-sans text-subhead font-semibold tracking-normal">Details</h2>
             <dl className="mt-3 space-y-3">
-              <div><dt className="text-[12px] font-semibold uppercase tracking-wider text-text-3">Customer</dt><dd>{o.customer.name}<br /><span className="num">{fmtPhone(o.customer.phone)}</span>{o.customer.email && <><br />{o.customer.email}</>}</dd></div>
-              <div><dt className="text-[12px] font-semibold uppercase tracking-wider text-text-3">{o.fulfilment === "pickup" ? "Pickup" : "Delivery"}</dt>
-                <dd className="flex gap-2">{o.fulfilment === "pickup" ? <Store className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden /> : <Truck className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />}
+              <div><dt className="text-caption font-semibold text-text-3">Customer</dt><dd>{o.customer.name}<br /><span className="num">{fmtPhone(o.customer.phone)}</span>{o.customer.email && <><br />{o.customer.email}</>}</dd></div>
+              <div><dt className="text-caption font-semibold text-text-3">{o.fulfilment === "pickup" ? "Pickup" : "Delivery"}</dt>
+                <dd className="flex gap-2">{o.fulfilment === "pickup" ? <Store className="mt-0.5 h-4 w-4 shrink-0 text-text-3" aria-hidden /> : <Truck className="mt-0.5 h-4 w-4 shrink-0 text-text-3" aria-hidden />}
                   <span>{o.fulfilment === "pickup" ? <>{settings.address}<br />{settings.hours}</> : <>{o.zoneName}{o.deliveryNote && <><br /><span className="text-text-2">“{o.deliveryNote}”</span></>}</>}</span></dd></div>
-              <div><dt className="text-[12px] font-semibold uppercase tracking-wider text-text-3">Payment</dt>
+              <div><dt className="text-caption font-semibold text-text-3">Payment</dt>
                 <dd>{PAYMENT_LABEL[o.paymentMethod]}{o.paymentRef && o.paymentRef !== "CASH" && <span className="num block text-text-2">Ref {o.paymentRef}</span>}</dd></div>
-              <div><dt className="text-[12px] font-semibold uppercase tracking-wider text-text-3">Placed</dt><dd className="num">{fmtDateTime(o.createdAt)}</dd></div>
+              <div><dt className="text-caption font-semibold text-text-3">Placed</dt><dd className="num">{fmtDateTime(o.createdAt)}</dd></div>
             </dl>
           </section>
 
           <section className="rounded-md border border-line bg-surface p-5" aria-labelledby="hist">
-            <h2 id="hist" className="mb-3 text-lg">Status history</h2>
+            <h2 id="hist" className="mb-3 font-sans text-subhead font-semibold tracking-normal">Status history</h2>
             <StatusHistory order={o} />
           </section>
 
           {settings.whatsapp && o.status !== "cancelled" && (
             <a href={whatsappLink(o, settings)} target="_blank" rel="noopener noreferrer"
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-sm border border-[#1da851] text-sm font-semibold text-[#128c42] hover:bg-[#1da851]/10">
+              className={buttonClass("secondary", "lg", "w-full")}>
               <MessageCircle className="h-4.5 w-4.5" aria-hidden /> Confirm on WhatsApp (optional)
             </a>
           )}
@@ -150,12 +155,12 @@ export function OrderPage({ id }: { id: string }) {
       <div className="container-page">
         <h1 className="sr-only">Order not found</h1>
         <EmptyState icon={<SearchX />} title="We couldn’t find that order" body="The link may be incomplete. Look it up with your order number and phone instead."
-          action={<Link href="/track" className="inline-flex h-10 items-center gap-2 rounded-sm bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700"><PackageSearch className="h-4 w-4" aria-hidden /> Track an order</Link>} />
+          action={<Link href="/track" className={buttonClass("primary")}><PackageSearch className="h-4 w-4" aria-hidden /> Track an order</Link>} />
       </div>
     );
   }
   return (
-    <div className="container-page pt-6 md:pt-8">
+    <div className="container-page pt-6 md:pt-10">
       <OrderDetailView order={order} settings={snap.data.settings} showConfirmHero />
       <p className="mx-auto mt-6 max-w-4xl text-center text-sm text-text-2">
         Bookmark this page, or track any time at <Link href="/track" className="font-semibold text-brand-600 underline underline-offset-2">Track an order</Link> with <b className="num">{order.number}</b> and your phone number.

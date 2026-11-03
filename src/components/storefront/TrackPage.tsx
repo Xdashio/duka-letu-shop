@@ -40,32 +40,29 @@ export function TrackPage() {
   return (
     <div className="container-page pt-6 md:pt-10">
       <div className="mx-auto max-w-4xl">
-        <div className="grid gap-6 md:grid-cols-[1fr_1.1fr] md:items-center">
-          <div>
-            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600"><PackageSearch className="h-5 w-5" aria-hidden /></span>
-            <h1 className="text-[28px] sm:text-[34px]">Track your order</h1>
-            <p className="mt-2 max-w-sm text-text-2">No account needed. Enter the order number from your confirmation and the phone number you used at checkout.</p>
-          </div>
-          <form onSubmit={submit} noValidate className="space-y-4 rounded-md border border-line bg-surface p-5 sm:p-6">
+        <div className="mx-auto max-w-md">
+          <h1 className="text-[1.625rem] sm:text-title">Track your order</h1>
+          <p className="mt-2 text-text-2">No account needed. Enter the order number from your confirmation and the phone number you used at checkout.</p>
+          <form onSubmit={submit} noValidate className="mt-6 space-y-4">
             <Field label="Order number" htmlFor="t-num" error={err.num} hint="Looks like DL-10015">
-              <Input id="t-num" value={num} onChange={(e) => setNum(e.target.value)} placeholder="DL-10015" autoComplete="off" invalid={!!err.num}
-                aria-describedby={err.num ? "t-num-err" : "t-num-hint"} />
+              <Input id="t-num" value={num} onChange={(e) => setNum(e.target.value)} placeholder="DL-10015" autoComplete="off" spellCheck={false} invalid={!!err.num}
+                aria-describedby={err.num ? "t-num-err" : "t-num-hint"} className="num uppercase" />
             </Field>
             <Field label="Phone number" htmlFor="t-phone" error={err.phone}>
-              <Input id="t-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" invalid={!!err.phone}
+              <Input id="t-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0712 345 678" invalid={!!err.phone}
                 aria-describedby={err.phone ? "t-phone-err" : undefined} />
             </Field>
-            <Button type="submit" size="lg" block loading={busy} disabled={!snap}>Find my order</Button>
+            <Button type="submit" size="lg" block loading={busy} disabled={!snap}><PackageSearch className="h-[18px] w-[18px]" aria-hidden /> Find my order</Button>
           </form>
         </div>
 
-        <div aria-live="polite" className="mt-8">
+        <div aria-live="polite" className="mt-10">
           {err.notFound && (
-            <div role="alert" className="flex gap-3 rounded-md border border-line bg-surface p-5">
-              <SearchX className="h-6 w-6 shrink-0 text-text-3" aria-hidden />
+            <div role="alert" className="mx-auto flex max-w-md gap-3 rounded-md bg-canvas p-5">
+              <SearchX className="h-5 w-5 shrink-0 text-text-3" aria-hidden />
               <div className="text-sm">
                 <p className="font-semibold">No order matches those details</p>
-                <p className="text-text-2">Check the order number and use the same phone number you entered at checkout. Still stuck? Call the shop on {snap?.data.settings.phone}.</p>
+                <p className="mt-0.5 text-text-2">Check the order number and use the same phone number you entered at checkout. Still stuck? Call the shop on <span className="num">{snap?.data.settings.phone}</span>.</p>
               </div>
             </div>
           )}

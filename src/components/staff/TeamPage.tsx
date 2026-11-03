@@ -74,7 +74,7 @@ export function TeamPage() {
                 <h2 className="truncate font-sans text-[15px] font-bold">{s.name}{s.id === me?.id && <span className="font-normal text-text-3"> (you)</span>}</h2>
                 <p className="num text-[13px] text-text-3">@{s.username}{s.phone && ` · ${fmtPhone(s.phone)}`}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <Badge tone={s.role === "owner" ? "brand" : s.role === "cashier" ? "accent" : "clay"}>{ROLE_LABEL[s.role]}</Badge>
+                  <Badge tone={s.role === "owner" ? "brand" : s.role === "cashier" ? "accent" : "neutral"}>{ROLE_LABEL[s.role]}</Badge>
                   {s.active ? <Badge tone="success" dot>Active</Badge> : <Badge dot>Deactivated</Badge>}
                 </div>
               </div>
