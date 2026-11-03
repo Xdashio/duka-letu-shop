@@ -57,7 +57,7 @@ export function SalesChart({ days }: { days: DaySales[] }) {
       </div>
 
       {view === "table" ? (
-        <div className="overflow-x-auto rounded-sm border border-line">
+        <div className="relative overflow-x-auto rounded-sm border border-line">
           <table className="w-full text-sm">
             <caption className="sr-only">Sales for the last 7 days, shop and online</caption>
             <thead className="bg-canvas text-left text-caption text-text-3">

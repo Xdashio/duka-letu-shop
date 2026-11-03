@@ -144,10 +144,10 @@ export function DashboardPage() {
             {s.recent.map((o) => (
               <li key={o.id}>
                 <Link href={`/staff/orders?open=${o.id}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3 hover:bg-canvas sm:grid-cols-[5.5rem_minmax(0,1fr)_auto_6.5rem]">
-                  <span className="num text-sm font-semibold">{o.number}</span>
-                  <span className="min-w-0 truncate text-sm">{o.customer.name} <span className="text-text-3">· {o.fulfilment === "pickup" ? "Pickup" : "Delivery"} · {timeAgo(o.createdAt)}</span></span>
-                  <span className="col-start-2 row-start-2 flex items-center gap-1.5 sm:col-start-auto sm:row-start-auto"><StatusBadge status={o.status} /><PaymentBadge status={o.paymentStatus} /></span>
-                  <span className="num col-start-3 row-start-1 text-right text-sm font-semibold sm:col-start-auto">{money(o.total)}</span>
+                  <span className="num text-sm font-semibold sm:col-start-1 sm:row-start-1">{o.number}</span>
+                  <span className="min-w-0 truncate text-sm sm:col-start-2 sm:row-start-1">{o.customer.name} <span className="text-text-3">· {o.fulfilment === "pickup" ? "Pickup" : "Delivery"} · {timeAgo(o.createdAt)}</span></span>
+                  <span className="col-start-2 row-start-2 flex items-center gap-1.5 sm:col-start-3 sm:row-start-1"><StatusBadge status={o.status} /><PaymentBadge status={o.paymentStatus} /></span>
+                  <span className="num col-start-3 row-start-1 text-right text-sm font-semibold sm:col-start-4">{money(o.total)}</span>
                 </Link>
               </li>
             ))}

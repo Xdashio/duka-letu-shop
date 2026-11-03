@@ -201,21 +201,21 @@ function InventoryInner() {
               </li>
             ))}
           </ul>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[640px] text-sm">
+          <div className="relative hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
               <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
-                <tr><th className="px-4 py-2.5 font-semibold">Product</th><th className="px-4 py-2.5 font-semibold">SKU</th><th className="px-4 py-2.5 text-right font-semibold">Qty</th>
-                  <th className="px-4 py-2.5 font-semibold">Status</th><th className="px-4 py-2.5 font-semibold">Last updated</th>{canAdjust && <th className="px-4 py-2.5"><span className="sr-only">Actions</span></th>}</tr>
+                <tr><th className="px-4 py-2.5 font-semibold">Product</th><th className="hidden px-4 py-2.5 font-semibold lg:table-cell">SKU</th><th className="px-4 py-2.5 text-right font-semibold">Qty</th>
+                  <th className="px-4 py-2.5 font-semibold">Status</th><th className="hidden px-4 py-2.5 font-semibold xl:table-cell">Last updated</th>{canAdjust && <th className="px-4 py-2.5"><span className="sr-only">Actions</span></th>}</tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {filtered.map(({ p, v }) => (
                   <tr key={v.id} className="hover:bg-canvas">
                     <td className="px-4 py-2.5"><div className="flex items-center gap-3"><ProductImage src={p.images[0]} alt="" className="h-9 w-9 shrink-0 rounded-sm" />
-                      <div className="min-w-0"><p className="max-w-[300px] truncate font-medium">{p.name}</p><p className="text-caption text-text-3">{v.label}{!p.published && " · hidden"}</p></div></div></td>
-                    <td className="num px-4 py-2.5 text-text-2">{v.sku}</td>
+                      <div className="min-w-0"><p className="max-w-[240px] truncate font-medium xl:max-w-[320px]">{p.name}</p><p className="text-caption text-text-3">{v.label}{!p.published && " · hidden"}</p></div></div></td>
+                    <td className="num hidden px-4 py-2.5 text-text-2 lg:table-cell">{v.sku}</td>
                     <td className="px-4 py-2.5 text-right"><span className="inline-flex items-center gap-2.5"><Meter stock={v.stock} threshold={th} /><span className="num w-8 font-semibold">{v.stock}</span></span></td>
                     <td className="px-4 py-2.5"><StockBadge stock={v.stock} threshold={th} /></td>
-                    <td className="px-4 py-2.5 text-text-2" title={fmtDateTime(v.updatedAt)}>{timeAgo(v.updatedAt)}</td>
+                    <td className="hidden px-4 py-2.5 text-text-2 xl:table-cell" title={fmtDateTime(v.updatedAt)}>{timeAgo(v.updatedAt)}</td>
                     {canAdjust && <td className="px-4 py-2.5 text-right"><Button size="sm" variant="secondary" onClick={() => setAdjust({ row: { p, v } })} aria-label={`Adjust stock for ${p.name} ${v.label}`}>Adjust</Button></td>}
                   </tr>
                 ))}
@@ -236,7 +236,7 @@ function InventoryInner() {
               </li>
             ))}
           </ul>
-          <div className="hidden overflow-x-auto md:block">
+          <div className="relative hidden overflow-x-auto md:block">
             <table className="w-full min-w-[820px] text-sm">
               <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
                 <tr><th className="px-4 py-2.5 font-semibold">When</th><th className="px-4 py-2.5 font-semibold">Product</th><th className="px-4 py-2.5 font-semibold">Type</th>

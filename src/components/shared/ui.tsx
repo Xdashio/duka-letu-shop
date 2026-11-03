@@ -141,8 +141,8 @@ export function Switch({ checked, onChange, label, disabled, showText = true }: 
   return (
     <button type="button" role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={() => onChange(!checked)}
       className="group/sw inline-flex min-h-8 shrink-0 items-center gap-2 rounded-sm text-small font-medium disabled:cursor-not-allowed disabled:opacity-50">
-      <span className={cx("relative h-5 w-9 rounded-full transition-colors", checked ? "bg-success-600" : "bg-line-strong group-hover/sw:bg-field")} aria-hidden>
-        <span className={cx("absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-pop transition-transform", checked ? "translate-x-[18px]" : "translate-x-0.5")} />
+      <span className={cx("relative block h-5 w-9 shrink-0 rounded-full transition-colors", checked ? "bg-success-600" : "bg-line-strong group-hover/sw:bg-field")} aria-hidden>
+        <span className={cx("absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-pop transition-transform", checked ? "translate-x-4" : "translate-x-0")} />
       </span>
       {showText && <span className={checked ? "text-text" : "text-text-3"} aria-hidden>{checked ? "Live" : "Hidden"}</span>}
     </button>

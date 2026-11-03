@@ -211,8 +211,8 @@ export function ProductsPage() {
         Demonstration catalogue built from the shop’s status photos. {showPrices ? "Prices and stock" : "Stock levels"} are sample values. {unconfirmed} names were read from photos and are marked <b>To confirm</b>.
       </Notice>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_150px_180px]">
-        <div className="relative">
+      <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-[minmax(0,1fr)_180px_150px_180px]">
+        <div className="relative col-span-2 lg:col-span-1">
           <label htmlFor="pr-q" className="sr-only">Search products</label>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-3" aria-hidden />
           <Input id="pr-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name, brand or SKU…" className="pl-9" spellCheck={false} />
@@ -221,7 +221,7 @@ export function ProductsPage() {
           <Select id="pr-cat" value={cat} onChange={(e) => setCat(e.target.value)}><option value="">All categories</option>{snap.data.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></div>
         <div><label htmlFor="pr-st" className="sr-only">Status</label>
           <Select id="pr-st" value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}><option value="">Live & hidden</option><option value="live">Live only</option><option value="hidden">Hidden only</option></Select></div>
-        <div><label htmlFor="pr-sort" className="sr-only">Sort</label>
+        <div className="col-span-2 sm:col-span-1"><label htmlFor="pr-sort" className="sr-only">Sort</label>
           <Select id="pr-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}><option value="updated">Recently updated</option><option value="name">Name A–Z</option><option value="stock">Lowest stock first</option></Select></div>
       </div>
 
@@ -229,15 +229,16 @@ export function ProductsPage() {
         {list.length === 0 ? <EmptyState icon={<Boxes />} title="No products found" body="Try a different search or filter." /> : (
           <>
           {/* Desktop / tablet table */}
-          <table className="hidden w-full text-sm md:table">
+          <div className="relative hidden overflow-x-auto md:block">
+          <table className="w-full text-sm">
             <caption className="sr-only">Products</caption>
             <thead className="border-b border-line bg-canvas/70 text-left text-caption text-text-3">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Product</th>
-                <th className="hidden px-4 py-2.5 font-semibold lg:table-cell">Category</th>
+                <th className="hidden px-4 py-2.5 font-semibold xl:table-cell">Category</th>
                 {showPrices && <th className="px-4 py-2.5 text-right font-semibold">Price</th>}
                 <th className="px-4 py-2.5 font-semibold">Stock</th>
-                <th className="px-4 py-2.5 font-semibold">On storefront</th>
+                <th className="px-4 py-2.5 font-semibold">Storefront</th>
                 <th className="px-4 py-2.5"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -251,7 +252,7 @@ export function ProductsPage() {
                         <ProductImage src={p.images[0]} alt="" className="h-11 w-11 shrink-0 rounded-sm" />
                         <div className="min-w-0">
                           <p className="flex flex-wrap items-center gap-1.5">
-                            <button onClick={() => setEditing(toDraft(p))} className="max-w-[320px] truncate text-left font-medium hover:underline">{p.name}</button>
+                            <button onClick={() => setEditing(toDraft(p))} className="max-w-[200px] truncate text-left font-medium hover:underline lg:max-w-[260px] xl:max-w-[340px]">{p.name}</button>
                             {p.nameUnconfirmed && <Badge tone="accent">To confirm</Badge>}
                             {p.featured && <Star className="h-3.5 w-3.5 fill-marigold-500 text-marigold-600" aria-label="Featured" />}
                           </p>
@@ -259,7 +260,7 @@ export function ProductsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden px-4 py-2.5 text-text-2 lg:table-cell">{cats.get(p.categoryId)}</td>
+                    <td className="hidden px-4 py-2.5 text-text-2 xl:table-cell">{cats.get(p.categoryId)}</td>
                     {showPrices && (
                       <td className="num whitespace-nowrap px-4 py-2.5 text-right font-medium">
                         {prices.length === 0 ? <Badge tone="warning">Needs price</Badge> : Math.min(...prices) === Math.max(...prices) ? money(prices[0]) : `${money(Math.min(...prices))}+`}
@@ -271,7 +272,7 @@ export function ProductsPage() {
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="sm" onClick={() => setEditing(toDraft(p))} aria-label={`Edit ${p.name}`}><Pencil className="h-3.5 w-3.5" aria-hidden /> Edit</Button>
+                        <Button variant="ghost" size="sm" className="max-xl:w-8 max-xl:px-0" onClick={() => setEditing(toDraft(p))} aria-label={`Edit ${p.name}`}><Pencil className="h-3.5 w-3.5" aria-hidden /><span className="hidden xl:inline">Edit</span></Button>
                         {p.published && <Link href={`/product/${p.slug}`} target="_blank" className={buttonClass("ghost", "icon-sm")} aria-label={`View ${p.name} on storefront`} title="View on storefront"><ExternalLink className="h-4 w-4" /></Link>}
                         {canDelete && <Button variant="ghost" size="icon-sm" aria-label={`Delete ${p.name}`} title="Delete" onClick={() => setDel(p)} className="hover:!text-danger-600"><Trash2 className="h-4 w-4" /></Button>}
                       </div>
@@ -281,6 +282,7 @@ export function ProductsPage() {
               })}
             </tbody>
           </table>
+          </div>
 
           {/* Phone list */}
           <ul className="divide-y divide-line md:hidden">

@@ -199,12 +199,11 @@ export function PosPage() {
             ))}
           </div>
           {products.length === 0 ? <EmptyState icon={<Search />} title="No match" body="Check the spelling or SKU." /> : (
-            <ul className="mt-3 grid grid-cols-1 gap-2 xs:grid-cols-2 xl:grid-cols-3">
+            <ul className="mt-3 grid grid-cols-1 gap-2 xs:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
               {products.map((p) => {
                 const stock = p.variants.reduce((s, v) => s + v.stock, 0);
                 const prices = p.variants.filter((v) => v.price > 0).map((v) => v.price);
-                const multi = p.variants.filter((v) => v.price > 0).length > 1;
-                return (
+                                return (
                   <li key={p.id}>
                     <button onClick={() => choose(p)} disabled={stock <= 0}
                       className="flex h-full w-full items-center gap-3 rounded-md bg-surface p-2 text-left ring-1 ring-line transition-shadow hover:ring-ink-900 active:bg-sunken disabled:opacity-50 disabled:hover:ring-line">
@@ -212,8 +211,8 @@ export function PosPage() {
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="line-clamp-2 text-small font-medium leading-snug">{p.name}</span>
                         <span className="mt-1 flex items-baseline justify-between gap-2">
-                          <span className="num text-sm font-semibold">{Math.min(...prices) !== Math.max(...prices) ? <span className="text-caption font-normal text-text-3">from </span> : null}{money(Math.min(...prices))}</span>
-                          <span className={cx("num text-caption", stock <= 0 ? "font-semibold text-danger-600" : "text-text-3")}>{stock <= 0 ? "Out" : `${stock} left`}{multi && stock > 0 ? " · options" : ""}</span>
+                          <span className="num whitespace-nowrap text-sm font-semibold">{Math.min(...prices) !== Math.max(...prices) ? <span className="text-caption font-normal text-text-3">from </span> : null}{money(Math.min(...prices))}</span>
+                          <span className={cx("num truncate text-caption", stock <= 0 ? "font-semibold text-danger-600" : "text-text-3")}>{stock <= 0 ? "Out" : `${stock} left`}</span>
                         </span>
                       </span>
                     </button>
