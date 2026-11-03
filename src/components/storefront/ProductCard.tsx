@@ -9,7 +9,6 @@ import { addToCart } from "@/lib/actions";
 import { money } from "@/lib/format";
 import { useToast } from "../shared/toast";
 import { ProductImage } from "../shared/ProductImage";
-import { LevelBadge } from "../shared/bits";
 import { Badge, cx } from "../shared/ui";
 
 const NEW_DAYS = 14;
@@ -31,29 +30,29 @@ export function ProductCard({ product: p, threshold, priority }: { product: Prod
   const opts = optionSummary(p);
   const single = vs.length === 1 ? vs[0] : null;
   const href = `/product/${p.slug}`;
+  // One badge at most, most important first.
+  const badge = level === "out" ? <Badge tone="neutral">Sold out</Badge> : level === "low" ? <Badge tone="warning" dot>Few left</Badge> : isNew ? <Badge tone="ink">New</Badge> : null;
 
   return (
-    <article className="group relative flex flex-col rounded-md border border-line bg-surface transition-colors hover:border-line-strong">
-      <Link href={href} className="block overflow-hidden rounded-t-md" tabIndex={-1} aria-hidden>
+    <article className="group relative flex h-full flex-col">
+      <Link href={href} className="relative block overflow-hidden rounded-md" tabIndex={-1} aria-hidden>
         <ProductImage src={p.images[0]} alt="" priority={priority}
-          className="aspect-square transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none" />
+          className={cx("aspect-[4/5] transition-transform duration-300 ease-out group-hover:scale-[1.025] motion-reduce:transform-none", level === "out" && "opacity-60")} />
+        {badge && <span className="pointer-events-none absolute left-2.5 top-2.5">{badge}</span>}
       </Link>
-      <div className="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-1">
-        {isNew && <Badge tone="clay">New</Badge>}
-        {level !== "in" && <LevelBadge level={level} />}
-      </div>
-      <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-        <p className="truncate text-[11px] font-bold uppercase tracking-wider text-text-3">{p.brand}</p>
-        <h3 className="mt-0.5 font-sans text-[14px] font-semibold leading-snug sm:text-[15px]">
-          <Link href={href} className="line-clamp-2 min-h-[2.6em] after:absolute after:inset-0 after:content-[''] focus:outline-none">
+      <div className="flex flex-1 flex-col pt-3">
+        <p className="eyebrow truncate">{p.brand}</p>
+        <h3 className="mt-0.5 font-sans text-sm font-medium leading-snug tracking-normal">
+          <Link href={href} className="line-clamp-2 min-h-[2.75em] after:absolute after:inset-0 after:content-[''] group-hover:underline group-hover:decoration-line-strong group-hover:underline-offset-2 focus:outline-none">
             {p.name}
           </Link>
         </h3>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-          <div className="min-w-0">
-            {lo !== hi && <span className="block text-[11px] text-text-3">from</span>}
-            <span className="num font-display text-[17px] font-bold leading-none tracking-tight sm:text-lg">{money(lo)}</span>
-            {opts && <span className="mt-1 block text-[12px] text-text-3">{opts}</span>}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2.5">
+          <div className="min-w-0 leading-tight">
+            <p className="num text-body font-semibold">
+              {lo !== hi && <span className="mr-1 text-small font-normal text-text-3">from</span>}{money(lo)}
+            </p>
+            {opts && <p className="mt-0.5 text-caption text-text-3">{opts}</p>}
           </div>
           {single ? (
             <button
@@ -67,17 +66,18 @@ export function ProductCard({ product: p, threshold, priority }: { product: Prod
                   toast({ kind: "success", title: "Added to cart", body: p.name });
                 }
               }}
-              aria-label={level === "out" ? `${p.name} is out of stock` : `Add ${p.name} to cart`}
+              aria-label={level === "out" ? `${p.name} is sold out` : `Add ${p.name} to cart`}
               className={cx(
-                "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm transition-colors",
-                level === "out" ? "bg-sunken text-text-3" : justAdded ? "bg-success-600 text-white" : "bg-brand-600 text-white hover:bg-brand-700",
+                "relative z-10 inline-flex h-9 shrink-0 items-center gap-1 rounded-sm px-3 text-small font-semibold transition-colors",
+                level === "out" ? "bg-sunken text-text-3" : justAdded ? "bg-success-600 text-white" : "bg-ink-900 text-white hover:bg-ink-700",
               )}
             >
-              {justAdded ? <Check className="h-4.5 w-4.5" aria-hidden /> : <Plus className="h-4.5 w-4.5" aria-hidden />}
+              {justAdded ? <Check className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
+              {level === "out" ? "Sold out" : justAdded ? "Added" : "Add"}
             </button>
           ) : (
-            <span className="relative z-10 shrink-0 rounded-sm border border-line-strong px-2 py-1.5 text-[12px] font-semibold text-text-2 group-hover:border-ink-700 group-hover:text-text">
-              Choose
+            <span className="relative z-10 inline-flex h-9 shrink-0 items-center rounded-sm px-3 text-small font-semibold text-text ring-1 ring-inset ring-line-strong transition-colors group-hover:ring-text-3" aria-hidden>
+              Options
             </span>
           )}
         </div>
@@ -86,27 +86,27 @@ export function ProductCard({ product: p, threshold, priority }: { product: Prod
   );
 }
 
-export function ProductGrid({ products, threshold, className }: { products: Product[]; threshold: number; className?: string }) {
+const GRID = "grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3 xl:grid-cols-4";
+
+export function ProductGrid({ products, threshold, className, priorityCount = 4 }: { products: Product[]; threshold: number; className?: string; priorityCount?: number }) {
   return (
-    <ul className={cx("grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4", className)}>
-      {products.map((p, i) => (
-        <li key={p.id} className="flex"><div className="flex w-full flex-col [&>article]:flex-1"><ProductCard product={p} threshold={threshold} priority={i < 4} /></div></li>
-      ))}
+    <ul className={cx(GRID, className)}>
+      {products.map((p, i) => <li key={p.id}><ProductCard product={p} threshold={threshold} priority={i < priorityCount} /></li>)}
     </ul>
   );
 }
 
-export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
+export function ProductGridSkeleton({ count = 8, className }: { count?: number; className?: string }) {
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4" aria-label="Loading products">
+    <ul className={cx(GRID, className)} aria-label="Loading products">
       {Array.from({ length: count }, (_, i) => (
-        <li key={i} className="rounded-md border border-line bg-surface">
-          <div className="skeleton aspect-square rounded-t-md" />
-          <div className="space-y-2 p-3.5">
-            <div className="skeleton h-3 w-16 rounded-xs" />
+        <li key={i}>
+          <div className="skeleton aspect-[4/5] rounded-md" />
+          <div className="space-y-2 pt-3">
+            <div className="skeleton h-3 w-14 rounded-xs" />
             <div className="skeleton h-4 w-full rounded-xs" />
             <div className="skeleton h-4 w-2/3 rounded-xs" />
-            <div className="skeleton mt-4 h-5 w-24 rounded-xs" />
+            <div className="flex justify-between pt-1"><div className="skeleton h-5 w-20 rounded-xs" /><div className="skeleton h-9 w-16 rounded-sm" /></div>
           </div>
         </li>
       ))}

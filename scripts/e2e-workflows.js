@@ -27,7 +27,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.goto(BASE + '/');
   await p.evaluate(() => localStorage.clear());
   await p.goto(BASE + '/');
-  await p.waitForSelector('text=Featured products');
+  await p.waitForSelector('h2:has-text("Featured")');
   await p.click('nav[aria-label="Categories"] >> text=Torches');
   await p.waitForURL(/category\/torches/);
   ok((await p.locator('h1').innerText()) === 'Torches', 'category page opens');
@@ -49,9 +49,9 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.waitForTimeout(150);
   ok(await p.locator('input[aria-label="Quantity of JC-7125 Rechargeable Torch"]').inputValue() === '3', 'cart qty increased to 3');
   await shot('A2-cart-d');
-  await p.click('text=Proceed to checkout');
+  await p.click('text=Go to checkout');
   await p.waitForURL(/checkout/);
-  await p.click('button:has-text("Place order")');
+  await p.click('button:has-text("Place order"):visible');
   ok(await p.locator('text=Enter your full name.').isVisible(), 'checkout validation shows errors');
   await p.fill('#co-name', 'Wanjiku Test');
   await p.fill('#co-phone', '0712 345 678');
@@ -59,7 +59,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   ok(await p.locator('#pay-cash').isDisabled(), 'cash disabled for delivery');
   await p.check('#zone-zone_2');
   await shot('A3-checkout-d');
-  await p.click('button:has-text("Place order")');
+  await p.click('button:has-text("Place order"):visible');
   await p.waitForURL(/order\//);
   await p.waitForSelector('text=Simulate: customer enters PIN');
   await shot('A4-stk-d');
@@ -67,7 +67,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.click('text=Simulate: customer enters PIN');
   await p.waitForSelector('text=View my order', { timeout: 5000 });
   await p.click('text=View my order');
-  const orderNo = (await p.locator('.font-display.text-marigold-500').innerText()).trim();
+  const orderNo = (await p.locator('[data-order-number]').innerText()).trim();
   ok(/DL-\d+/.test(orderNo), 'order number shown ' + orderNo);
   ok(await p.locator('text=Paid').first().isVisible(), 'payment status paid');
   ok((await data()).orders[0].total === 3 * 300 + 200, 'order total includes zone fee');
@@ -165,7 +165,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.goto(BASE + '/staff/pos');
   ok(await p.locator('text=You don’t have access to this page').isVisible(), 'clerk blocked from POS');
   await p.goto(BASE + '/product/ns-1587bt-solar-radio-with-bluetooth');
-  ok(await p.locator('text=10 in stock').isVisible(), 'storefront shows new availability');
+  ok(await p.locator('text=10 on the shelf').isVisible(), 'storefront shows new availability');
   await p.goto(BASE + '/staff/inventory'); await logout();
 
   console.log('Workflow E: catalogue management');
@@ -179,7 +179,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.click('button:has-text("Add variant")');
   await p.fill('#v1l', '10 m'); await p.fill('#v1p', '1500'); await p.fill('#v1o', '6');
   await p.setInputFiles('input[type=file]', require('path').join(__dirname, '../public/products/cob-unit-1.webp'));
-  await p.waitForSelector('text=MAIN');
+  await p.waitForSelector('text=Main');
   await shot('E1-product-form-d');
   await p.click('div[role=dialog] >> button:has-text("Add product")');
   await p.waitForTimeout(300);
@@ -198,7 +198,7 @@ const ok = (c, msg) => { if (c) { pass++; console.log('  ✓', msg); } else { fa
   await p.click('div[role=dialog] >> button:has-text("Save changes")');
   await p.waitForTimeout(200);
   ok((await data()).products.find((x) => x.id === np.id).variants[0].price === 900, 'edit saved price');
-  await p.click('button[aria-label="Hide Demo LED Strip Light"]');
+  await p.click('button[role=switch][aria-label="Demo LED Strip Light on storefront"]:visible');
   await p.waitForTimeout(300);
   await shot('E3-after-hide');
   await p.goto(BASE + '/products?q=LED%20Strip');

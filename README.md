@@ -5,7 +5,8 @@ A clickable prototype of an online storefront and shop management app for a Keny
 "Duka Letu" is a placeholder name. All prices, stock levels and business details are **demonstration values**. Payments and sign-in are **simulated**.
 
 - Product requirements: [`docs/PRD.md`](docs/PRD.md)
-- Design system: [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md)
+- Design system: [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) (tokens, type, components and the rules behind them)
+- Design audit: [`DESIGN_AUDIT.md`](DESIGN_AUDIT.md) (what was wrong with the first prototype and why it changed)
 
 ## Run it
 

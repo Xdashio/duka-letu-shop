@@ -9,8 +9,10 @@ import { cx } from "./ui";
  * Fixed-ratio product photo. Resolves IndexedDB uploads ("idb:") and shows a
  * neutral fallback when a photo is missing or fails to load.
  */
-export function ProductImage({ src, alt, className, fit = "cover", sizes, priority }: {
+export function ProductImage({ src, alt, className, fit = "cover", sizes, priority, inset }: {
   src?: string; alt: string; className?: string; fit?: "cover" | "contain"; sizes?: string; priority?: boolean;
+  /** Mount the photo inside the matte with a small margin (gallery / hero use). */
+  inset?: boolean;
 }) {
   const [url, setUrl] = useState<string | null>(src && !src.startsWith("idb:") ? src : null);
   const [failed, setFailed] = useState(false);
@@ -24,18 +26,18 @@ export function ProductImage({ src, alt, className, fit = "cover", sizes, priori
   }, [src]);
 
   return (
-    <div className={cx("relative overflow-hidden bg-sunken", className)}>
+    <div className={cx("matte relative overflow-hidden", className)}>
       {url && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={url} alt={alt} sizes={sizes} loading={priority ? "eager" : "lazy"} decoding="async"
           onError={() => setFailed(true)}
-          className={cx("absolute inset-0 h-full w-full", fit === "cover" ? "object-cover" : "object-contain")}
+          className={cx("absolute", inset ? "left-[6%] top-[6%] h-[88%] w-[88%] rounded-sm" : "inset-0 h-full w-full", fit === "cover" ? "object-cover" : "object-contain")}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-text-3">
           <ImageOff className="h-6 w-6" aria-hidden />
-          <span className="text-[11px]">{src ? "Photo unavailable" : "No photo yet"}</span>
+          <span className="text-caption">{src ? "Photo unavailable" : "No photo yet"}</span>
         </div>
       )}
     </div>

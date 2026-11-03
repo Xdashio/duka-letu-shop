@@ -37,7 +37,7 @@ export function OrderTracker({ order, compact }: { order: Order; compact?: boole
   if (cancelled) {
     const ev = order.history.find((h) => h.status === "cancelled");
     return (
-      <div className="flex items-start gap-3 rounded-md border border-danger-100 bg-danger-100/50 p-4">
+      <div className="flex items-start gap-3 rounded-md bg-danger-100/60 p-4">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger-600 text-white"><X className="h-4 w-4" aria-hidden /></span>
         <div className="text-sm">
           <p className="font-semibold">Order cancelled{ev ? ` · ${fmtDateTime(ev.at)}` : ""}</p>
@@ -62,8 +62,8 @@ export function OrderTracker({ order, compact }: { order: Order; compact?: boole
             )}>
               {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : i + 1}
             </span>
-            <span className={cx("mt-2 px-1 text-[12px] font-semibold leading-tight sm:text-[13px]", done ? "text-text" : "text-text-3")}>{STATUS_LABEL[s]}</span>
-            {!compact && reached.get(s) && <span className="num mt-0.5 hidden text-[11px] text-text-3 sm:block">{fmtDateTime(reached.get(s)!)}</span>}
+            <span className={cx("mt-2 px-1 text-caption font-semibold leading-tight sm:text-small", done ? "text-text" : "text-text-3")}>{STATUS_LABEL[s]}</span>
+            {!compact && reached.get(s) && <span className="num mt-0.5 hidden text-caption text-text-3 sm:block">{fmtDateTime(reached.get(s)!)}</span>}
             <span className="sr-only">{done ? (current ? "(current step)" : "(done)") : "(upcoming)"}</span>
           </li>
         );
@@ -79,9 +79,9 @@ export function StatusHistory({ order }: { order: Order }) {
         <li key={i} className="flex gap-3 text-sm">
           <span className={cx("mt-1.5 h-2 w-2 shrink-0 rounded-full", i === 0 ? "bg-brand-600" : "bg-line-strong")} aria-hidden />
           <div>
-            <p><b>{STATUS_LABEL[h.status]}</b> <span className="text-text-3">· {h.by}</span></p>
-            <p className="num text-[12px] text-text-3">{fmtDateTime(h.at)}</p>
-            {h.note && <p className="text-[13px] text-text-2">{h.note}</p>}
+            <p><b className="font-semibold">{STATUS_LABEL[h.status]}</b> <span className="text-text-3">· {h.by}</span></p>
+            <p className="num text-caption text-text-3">{fmtDateTime(h.at)}</p>
+            {h.note && <p className="text-small text-text-2">{h.note}</p>}
           </div>
         </li>
       ))}
